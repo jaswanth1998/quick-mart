@@ -1,0 +1,201 @@
+desc: "This file is used to tell the co-pilot what needs to be done in the project. "
+tasks: 
+  - taks1: You need to create a project of React and install the necessary packages for this project. 
+    userView: 
+      desc: In the user point of view, this app should be created and he should be seen in the login page. After he successfully logged in. Once the user is created, after he logs in, he has to see the dashboard page with respect to pages. 
+    devView:
+      desc: In the developer point of view, a React app will be created and subfolders will be created for the components, services, and all these things. The necessary packages will be installed. And that's it for this task.
+  - task2: You need to create a login page. The login page consists of sign-in and sign-up, where sign-in is for a user to use their already existing email address and password. First sign in, we are going to use super base sign in methods. For now, we are going with email. For registration purpose, we will ask ,Username, Email address, Password,Confirm password
+    userView: 
+      desc: In the user point of view, he should be able to sign in and sign up using his email address and password. If he doesn't have an account, he can sign up using his email address and password. After he successfully signed up, he can directly log in using his email address and password. 
+    devView:
+      desc: In the developer point of view, the login page will be created with sign-in and sign-up forms. The sign-in form will have email address and password fields. The sign-up form will have username, email address, password, and confirm password fields. The necessary validation will be added to the forms. The super base sign-in methods will be used for authentication. And that's it for this task.
+  - task3: You need to create the routing for all the pages and route cards. 
+    userView: 
+      desc: In the user point of view, he should be able to change the different pages Dashboard, Store, Department, Products, Transactions, uploadFiles, Todos
+    devView:
+      desc: In the developer point of view, the routing will be created for all the pages and route cards.If user doesn't log in, the user has to go to the login page. Otherwise, no. 
+  - task4: We need to create a dashboard page. For now, we are putting something like "Coming Soon" as still we need to get the requirement from the client. 
+    userView: 
+      desc: In the user point of view, he should be able to see the dashboard page with a message "Coming Soon"
+    devView:
+      desc: In the developer point of view, the dashboard page will be created with a message "Coming Soon". And that's it for this task.
+  - task5: >
+      You need to create a department page. In the department page, the user should be able to see the list of departments in a table format.
+      The user should be able to search for a department using the search bar.It should be an option to export in spreadsheet or Excel. By default,
+      we will be getting only last month's transactions. For suppose today's date is October 11th, we will get the transactions from August 11th. 
+      If the user will be using the date range filter to get more transactions. There will be a page nation also for this task. There will be a button to add a new department.
+      When the user clicks on the button, a modal will be opened with a form to add a new department. The form will have only one field that is description. The user should be able to edit and delete a department.
+      When the user clicks on the edit button, a modal will be opened with a form to edit the department. The form will have only one field that is description. When the user clicks on the delete button, a confirmation dialog will be opened to confirm the deletion. 
+    userView: 
+      desc: >
+        In the user point of view, he should be able to see the list of departments in a table format. 
+        The user should be able to search for a department using the search bar.It should be an option to export in spreadsheet or Excel. 
+        There will be a pagination also for this task.Adding the data will be done by the upload tab where user is going to upload the files.
+        The form will have only one field that is description. The user should be
+        able to delete a department. The form will have only one
+        field that is description. When the user clicks on the delete button, a confirmation dialog will be opened to confirm the deletion.
+    devView:
+      desc: > 
+        In the developer point of view, the department page will be created with a table to 
+        show the list of departments. The search bar will be added to search for a department. 
+        The export button will be added to export in spreadsheet or Excel. The date range filter
+        will be added to get more transactions. The pagination will be added for this task.
+        Adding the data will be done by the upload tab where user is going to upload the files. 
+        The editing the item also will be done by the uploading the files as per the store ID. 
+        The delete button will be added to open a confirmation dialog to confirm the deletion. 
+        The superbase calls will be made to get, add, edit, and delete departments from the database
+        using React Query and Supabase client. And that's it for this task.Use trim for the description field.
+  - task6: >
+      You need to create a product page. In the product page, the
+      user should be able to see the list of products in a table format.
+      The user should be able to search for a product using the search bar.
+      There should be filters like department, tax flags, age restriction.
+      It should be an option to export in spreadsheet or Excel.
+      There will be a pagination also for this task.
+      Adding the data will be done by the upload tab where user is going to upload the files.
+      Store ID will be mandatory to add a product.     
+    userView:
+      desc: >
+        In the user point of view, he should be able to see the list of products in a table format.
+        The user should be able to search for a product using the search bar.
+        There should be filters like department, tax flags, age restriction.
+        It should be an option to export in spreadsheet or Excel.
+        There will be a pagination  also for this task.
+        There will be a button to add a new product.
+        Adding the data will be done by the upload tab where user is going to upload the files.
+        Store ID will be mandatory to add a product.
+    devView:
+      desc: >
+        In the developer point of view, the product page will be created with a table to
+        show the list of products. The search bar will be added to search for a product.
+        The filters like department, tax flags, age restriction will be added.
+        The export button will be added to export in spreadsheet or Excel.
+  - task7: >
+      Your job is to create a transaction page where it has two tabs
+      1. Merchandise
+      2. Fuel Sales
+      In one tab, we will show the only merchandise sales based upon the database key. 
+      If its fuel is false, we are going to show the merchandise in the transaction. 
+      If its fuel is true, we are showing the transaction in fuel sales.
+      But defaultly, we will be getting only last month's transactions. For suppose today's date is October 11th,
+      we will get the transactions from August 11th. If the user will be using the date range filter to get more transactions.
+      There will be a pagination also for this task.
+      Their should be an option to export in spreadsheet or Excel.
+    userView:
+      desc: >
+        In the user point of view, he should be able to see the transaction page with two tabs
+        1. Merchandise
+        2. Fuel Sales
+        In one tab, we will show the only merchandise sales and in the other tab we are going to show the fuel sales.
+        By defaultly, we will be getting only last month's transactions. For suppose today's date is October 11th,
+        we will get the transactions from August 11th. If the user will be using the date range filter to get more transactions.
+        There will be a pagination also for this task.
+        There should be an option to export in spreadsheet or Excel.
+    devView:
+      desc: >
+        In the developer point of view, the transaction page will be created with two tabs
+        1. Merchandise
+        2. Fuel Sales
+        In one tab, we will show the only merchandise sales based upon the database key.
+        If its fuel is false, we are going to show the merchandise in the transaction.
+        If its fuel is true, we are showing the transaction in fuel sales.
+        The necessary calls will be made to get the transactions from the database
+        using React Query and Supabase client. And that's it for this task.
+        We will be using the transaction date for the date range filter.
+  - task8: >
+      You need to create an upload page. Where the data uploading will be done.
+      Their different types of files will be uploaded and each will be processed in a different way.
+      The way processing the files is mentioned in the #uploadFiles.yaml file.
+      I placed the example files in the folder named "#exampleUploadFiles" in the root directory.
+    userView:
+      desc: >
+        In the user point of view, he should be able to process the files which he is uploading and see the status of each file.
+        The should be process according to the #uploadFiles.yaml file.
+        After processing done he should notified with a message.
+    devView:
+      desc: >
+        In the developer point of view, the upload page will be created with a form to
+        process files that will be inserting into the respect db table.
+        The necessary API calls will be made to process the files using React Query and Supabase client.
+        The file processing logic will be implemented according to the #uploadFiles.yaml file.
+        And that's it for this task.
+  - task9: >
+      You need to create a todo page. In the todo page, the user should be able
+      to see the list of todos in a table format. The user should be able to search
+      for a todo using the search bar. It should be an option to export in spreadsheet
+      or Excel. By default, we will be getting only last month's todos. For suppose 
+      today's date is October 11th, we will get the todos from August 11th. If the user
+      will be using the date range filter to get more todos. There will be a page nation
+      also for this task. There will be a button to add a new todo. When the
+      user clicks on the button, a modal will be opened with a form to add a new todo.
+      The form will have the following fields: title, description, status, assignee.
+      The user should be able to edit and delete a todo. When the user clicks on the
+      edit button, a modal will be opened with a form to edit the todo. The form
+      will have the following fields: title, description, status, assignee.
+      When the user clicks on the delete button, a confirmation dialog will be opened
+      to confirm the deletion.
+    userView:
+      desc: >
+        In the user point of view, he should be able to see the list of todos in
+        a table format. The user should be able to search for a todo using the search bar.
+        It should be an option to export in spreadsheet or Excel. By default, we will be
+        getting only last month's todos. For suppose today's date is October 11th,
+        we will get the todos from August 11th. If the user will be using the
+        date range filter to get more todos. There will be a page nation also for this task.
+        There will be a button to add a new todo. When the user clicks on the button
+        a modal will be opened with a form to add a new todo.
+        The form will have the following fields: title, description, status, assignee.
+        The user should be able to edit and delete a todo. When the user clicks on the
+        edit button, a modal will be opened with a form to edit the todo.
+        The form will have the following fields: title, description, status, assignee.
+        When the user clicks on the delete button, a confirmation dialog will be opened
+        to confirm the deletion.
+    devView:
+      desc: >
+        In the developer point of view, the todo page will be created with a table to
+        show the list of todos. The search bar will be added to search for a todo.
+        The export button will be added to export in spreadsheet or Excel.
+        The date range filter will be added to get more todos. The page nation will be
+        added for this task. The add button will be added to open a modal with a form
+        to add a new todo. The edit button will be added to open a modal with a
+        form to edit the todo. The delete button will be added to open a confirmation
+        dialog to confirm the deletion. The necessary API calls will be made to get,
+        add, edit, and delete todos from the database using React Query and Supabase client.
+        And that's it for this task.
+  - task10: >
+      Make sure all the tasks you agree on are completed.
+      - All the code you've created is up to the mark
+      - All necessary packages are being installed
+      - No testing is needed
+      I'll do the manual testing and cross-verify each and every code you've written. Review it and do the final output.
+    userView:
+      desc: In the user point of view, he should be able to see the final output
+    devView:
+      desc: In the developer point of view, the final output will be created with all the necessary packages installed. And that's it for this task.
+  - task11: >
+      After the completing the tasks, create a readme file when I see that file. 
+      I should be able to understand the project in and out. 
+      The readme file should contain the following sections:
+      - Introduction
+      - Features
+      - Installation
+      - Usage
+      - API Reference
+      - Contributing
+      - License
+      And write what you done.
+
+
+
+
+
+
+
+
+
+
+      
+
+
+

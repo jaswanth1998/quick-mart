@@ -1,0 +1,263 @@
+{
+	"000002": {
+		"Age_Requirements": 19,
+		"Description": "CIGARETTES        ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000003": {
+		"Age_Requirements": 19,
+		"Description": "OTHER TOBACCO     ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000004": {
+		"Age_Requirements": 19,
+		"Description": "BEER              ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000005": {
+		"Age_Requirements": 19,
+		"Description": "WINE              ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000006": {
+		"Age_Requirements": 19,
+		"Description": "LIQUOR            ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000007": {
+		"Description": "PKG BEVERAGES     ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000008": {
+		"Description": "CANDY             ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000009": {
+		"Description": "FLUID MILK PRODUC ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000010": {
+		"Description": "OTHER DAIRY & DEL ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000011": {
+		"Description": "PKG SANDWICH/DELI ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000012": {
+		"Description": "PKG ICE CREAM/NOV ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000013": {
+		"Description": "FROZEN FOODS      ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000014": {
+		"Description": "PKG BREAD         ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000015": {
+		"Description": "SALTY SNACKS      ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000016": {
+		"Description": "PKG SWEET SNACKS  ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000017": {
+		"Description": "ALTERNATIVE SNACKS",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000018": {
+		"Description": "PERISHABLE GROCERY",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000019": {
+		"Description": "EDIBLE GROCERY    ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000020": {
+		"Description": "NON-EDIBLE GROCERY",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000021": {
+		"Description": "HEALTH & BEAUTY C ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000022": {
+		"Description": "GENERAL MERCHANDI ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000023": {
+		"Description": "PUBLICATIONS      ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000024": {
+		"Description": "AUTOMOTIVE PRODUC ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000025": {
+		"Description": "AUTOMOTIVE SERVIC ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000026": {
+		"Description": "STORE SERVICES (O ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000027": {
+		"Conexxus_Product_Code": 510,
+		"Description": "LOTTERY/GAMING (C ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000028": {
+		"Description": "ICE               ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000029": {
+		"Description": "FOODSERVICE PREPA ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000030": {
+		"Description": "HOT DISPENSED BEV ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000031": {
+		"Description": "COLD DISPENSED BE ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000032": {
+		"Description": "FROZEN DISPENSED  ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000033": {
+		"Conexxus_Product_Code": 533,
+		"Description": "PRE-PAID CARDS    ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000043": {
+		"Conexxus_Product_Code": 510,
+		"Description": "LOTTERY SCRATCH T ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000066": {
+		"Age_Requirements": 19,
+		"Description": "VAPE PRODUCTS     ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000067": {
+		"Age_Requirements": 19,
+		"Description": "VAPE DEVICES      ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000071": {
+		"Description": "CARD ACTIVATION   ",
+		"Gift_Card_Department": true,
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000076": {
+		"Description": "Noble Romans      ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000077": {
+		"Description": "OTHER COLD FOODSE ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000078": {
+		"Description": "OTHER HOT FOODSER ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000079": {
+		"Description": "KRISPY KRUNCHY CH ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000081": {
+		"Description": "OTHER/UNDEFINED   ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000082": {
+		"Description": "PAIDOUTS (RESTRIC ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000084": {
+		"Description": "BRANDED FOOD SERV ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000085": {
+		"Description": "DISCOUNTS AND REF ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000086": {
+		"Description": "MOTOR OIL(BRANDED)",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000087": {
+		"Description": "STORE SERVICE FEE ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000088": {
+		"Description": "CAR WASH          ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000094": {
+		"Description": "STORE USE/SUPPLY  ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000098": {
+		"Description": "SERVICE CHARGES   ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	},
+	"000099": {
+		"Description": "EDI Default       ",
+		"Sales_Summary_Report": true,
+		"Shift_Report_Flag": true
+	}
+}

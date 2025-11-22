@@ -1,0 +1,184 @@
+project:
+  name: "Quick Gas and Convenience Store"
+  type: "Next.js 15 (App Router) + React 18 + TypeScript"
+  ui_library: "Ant Design (AntD)"
+  backend: "Supabase (PostgreSQL)"
+  description: >
+    Production-ready React app using Ant Design and Supabase with strict coding standards,
+    modular architecture, and normalized database (up to 3NF).
+
+stack:
+  runtime: "Node 20+"
+  packages:
+    - next
+    - react
+    - react-dom
+    - typescript
+    - tanstack/react-query
+    - supabase/ssr
+    - supabase/supabase-js
+    - antd
+    - dayjs
+    - zod
+    - react-hook-form
+    - hookform/resolvers
+    - eslint
+    - prettier
+    - jest
+    - testing-library/react
+    - husky
+    - lint-staged
+  env_variables:
+    - NEXT_PUBLIC_SUPABASE_URL
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - SUPABASE_SERVICE_ROLE_KEY
+
+scripts:
+  dev: "next dev"
+  build: "next build"
+  start: "next start -p 3000"
+  lint: "eslint ."
+  typecheck: "tsc --noEmit"
+  test: "jest"
+
+structure:
+  base_dir: "/"
+  folders:
+    - path: ".github/workflows"
+    - path: "src/app"
+    - path: "src/components"
+    - path: "src/components/ui"
+    - path: "src/hooks"
+    - path: "src/lib"
+    - path: "src/lib/supabase"
+    - path: "src/providers"
+    - path: "src/styles"
+    - path: "amel"
+    - path: "tests"
+    - path: "public"
+
+routing:
+  public_routes:
+    - path: "/sign-in"
+    - path: "/sign-up"
+  protected_routes:
+    - path: "/dashboard"
+    - path: "/department"
+    - path: "/product"
+    - path: "/transaction"
+    - path: "/upload"
+    - path: "/todo"
+
+providers:
+  - file: "src/providers/query-provider.tsx"
+  - file: "src/providers/antd-theme-provider.tsx"
+
+lib_files:
+  - "src/lib/supabase/server.ts"
+  - "src/lib/supabase/client.ts"
+  - "src/lib/auth.ts"
+  - "src/lib/utils.ts"
+
+ui_basics:
+  layout:
+    file: "src/app/(app)/layout.tsx"
+    components:
+      - "AntD Layout: Header, Sider, Content, Footer"
+      - "AntD Menu with routes: dashboard, department, product, transaction, upload, todo"
+      - "Breadcrumbs for nested routes"
+  components:
+    - "src/components/ui/PageHeader.tsx"
+    - "src/components/ui/Card.tsx"
+    - "src/components/ui/DataTable.tsx"
+    - "src/components/ui/FormModal.tsx"
+    - "src/components/ui/ConfirmDialog.tsx"
+    - "src/components/ui/SearchBar.tsx"
+    - "src/components/ui/StatTiles.tsx"
+
+security_and_auth:
+  server_guard_example: "src/app/(app)/layout.tsx checks Supabase user and redirects to /sign-in if missing"
+  notes:
+    - "Service role key must never be exposed to client"
+    - "Privileged operations only in server route handlers"
+
+
+pages:
+  - name: "dashboard" # We are not going to develop this page we will just put like coming soon
+    route: "/dashboard"
+    amel_spec: "amel/dashboard.amel.yaml"
+    purpose: "KPIs, quick stats, recent transactions, low-stock alerts"
+  - name: "department"
+    route: "/department"
+    amel_spec: "amel/department.amel.yaml"
+    purpose: "CRUD for departments; list, search"
+  - name: "product"
+    route: "/product"
+    amel_spec: "amel/product.amel.yaml"
+    purpose: "CRUD for products; filters (department, tax flags, age restriction), pagination"
+  - name: "transaction"
+    route: "/transaction"
+    amel_spec: "amel/transaction.amel.yaml"
+    purpose: "Record sales/refunds; show history with product lookup; export CSV"
+  - name: "upload"
+    route: "/upload"
+    amel_spec: "amel/upload.amel.yaml"
+    purpose: "File uploads to Supabase Storage; list and manage files"
+  - name: "todo"
+    route: "/todo"
+    amel_spec: "amel/todo.amel.yaml"
+    purpose: "Task management for store ops; assign, track, complete"
+
+generation_rules:
+  - "Before adding code, search repo for existing components/helpers and reuse; no duplication."
+  - "Use AntD components with consistent theming and spacing."
+  - "React Query keys: ['departments'], ['products'], ['transactions'], ['uploads'], ['todos']."
+  - "Forms use React Hook Form + Zod; show inline validation errors."
+  - "Privileged Supabase writes only via server route handlers; client uses anon key + RLS."
+  - "Paginate tables (pageSize=10/20) and persist filters in the query string."
+  - "Use optimistic updates for fast UX; rollback on error."
+  - "Use ESLint, Prettier, Jest; block PRs on CI failure."
+
+files_to_generate:
+  - ".github/workflows/ci.yml"
+  - "src/app/(public)/sign-in/page.tsx"
+  - "src/app/(public)/sign-up/page.tsx"
+  - "src/app/(app)/layout.tsx"
+  - "src/app/dashboard/page.tsx"
+  - "src/app/department/page.tsx"
+  - "src/app/product/page.tsx"
+  - "src/app/transaction/page.tsx"
+  - "src/app/upload/page.tsx"
+  - "src/app/todo/page.tsx"
+  - "src/providers/query-provider.tsx"
+  - "src/providers/antd-theme-provider.tsx"
+  - "src/components/ui/DataTable.tsx"
+  - "src/components/ui/FormModal.tsx"
+  - "src/components/ui/PageHeader.tsx"
+  - "src/hooks/useDepartments.ts"
+  - "src/hooks/useProducts.ts"
+  - "src/hooks/useTransactions.ts"
+  - "src/hooks/useUploads.ts"
+  - "src/hooks/useTodos.ts"
+  - "src/lib/supabase/server.ts"
+  - "src/lib/supabase/client.ts"
+  - "src/lib/auth.ts"
+  - "src/lib/utils.ts"
+  - "amel/dashboard.amel.yaml"
+  - "amel/department.amel.yaml"
+  - "amel/product.amel.yaml"
+  - "amel/transaction.amel.yaml"
+  - "amel/upload.amel.yaml"
+  - "amel/todo.amel.yaml"
+
+testing_and_ci:
+  unit:
+    - "Render tests for each page"
+    - "Hook tests for React Query data"
+  ci:
+    - "Run lint, typecheck, test on PR via GitHub Actions"
+  precommit:
+    - "Husky + lint-staged on changed files"
+
+notes:
+  - "Name this file: copilot-project-structure.yaml"
+  - "Next step: generate each AMEL page file with fields matching these schemas."

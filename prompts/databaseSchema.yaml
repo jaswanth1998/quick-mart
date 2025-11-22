@@ -1,0 +1,216 @@
+desc: "This file contains the details of database schema for the project"
+tables:
+  - tableName: "departments"
+    desc: "This table contains the details of the departments"
+    columns:
+      - columnName: "id"
+        type: "int8"
+        isPrimaryKey: true
+        isAutoIncrement: true
+        isNullable: false
+        desc: "This is the unique id for the department"
+      - columnName: "created_at"
+        type: "timestamp"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        default: "CURRENT_TIMESTAMP" 
+        desc: "The deafult timestamp value will be created by the database, so no need to create anything on the programmatic end."
+      - columnName: "store_id"
+        type: "int8"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the store id for the department"
+      - columnName: "description"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the description of the department"
+  - tableName: "products"
+    desc: "This table contains the details of the products"
+    columns:
+      - columnName: "id"
+        type: "int8"
+        isPrimaryKey: true
+        isAutoIncrement: true
+        isNullable: false
+        desc: "This is the unique id for the product"
+      - columnName: "created_at"
+        type: "timestamp"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        default: "CURRENT_TIMESTAMP" 
+        desc: "The deafult timestamp value will be created by the database, so no need to create anything on the programmatic end."
+      - columnName: "storeId"
+        type: "int8"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the store id for the product"
+      - columnName: "department_id"
+        type: "int8"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the department id for the product"
+      - columnName: "description"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the description of the Product Name"
+      - columnName: "price"
+        type: "float4"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is price of the product and it is in cad cents for example 1000 means 10.00 CAD"
+      - columnName: "ageRestriction"
+        type: "boolean"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is age requirement for purchasing the product"
+      - columnName: "tax1"
+        type: "boolean"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the first tax applicable for the product"
+      - columnName: "tax2"
+        type: "boolean"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the second tax applicable for the product"
+  - tableName: "transactions"
+    desc: "This table contains the details of the transactions"
+    columns:
+      - columnName: "id"
+        type: "int8"
+        isPrimaryKey: true
+        isAutoIncrement: true
+        isNullable: false
+        desc: "This is the unique id for the transaction"
+      - columnName: "created_at"
+        type: "timestamp"
+        isPrimaryKey: false     
+        isAutoIncrement: false
+        isNullable: false
+        default: "CURRENT_TIMESTAMP" 
+        desc: "The deafult timestamp value will be created by the database, so no need to create anything on the programmatic end."
+      - columnName: "shiftNumber"
+        type: "int8"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the shift number for the transaction"
+      - columnName: "productId"
+        type: "int8"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the product id for the transaction"
+      - columnName: "quantity"
+        type: "int4"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the quantity of the product in the transaction"
+      - columnName: "productDescription"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the description of the product in the transaction"
+      - columnName: "quantity"
+        type: "int4"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the quantity of the product in the transaction"
+      - columnName: "amount"
+        type: "float4"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the amount of the product in the transaction and it is in cad cents for example 1000 means 10.00 CAD"
+      - columnName: "dateTime"
+        type: "timestamp"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the time of the transaction"
+      - columnName: "isGasTrn"
+        type: "boolean"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is a boolean field to identify if the transaction is for gas or not"
+      - columnName: "typeOfGas"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: true
+        desc: "This is the type of gas for the transaction if it is a gas transaction"
+      - columnName: "volume"
+        type: "float4"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: true
+        desc: "This is the volume of gas for the transaction if it is a gas transaction"
+      - columnName: "pump"
+        type: "int4"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: true
+        desc: "This is the pump number for the transaction if it is a gas transaction"
+  - tablename: "todos"
+    desc: "This table contains the details of the todos"
+    columns:
+      - columnName: "id"
+        type: "int8"
+        isPrimaryKey: true
+        isAutoIncrement: true
+        isNullable: false
+        desc: "This is the unique id for the todo"
+      - columnName: "created_at"
+        type: "timestamp"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        default: "CURRENT_TIMESTAMP" 
+        desc: "The deafult timestamp value will be created by the database, so no need to create anything on the programmatic end."
+      - columnName: "description"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the description of the todo"
+      - columnName: "title"
+        type: "TEXT"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "This is the title of the todo"
+      - columnName: "status"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "Task status: pending, in_progress, completed, archived"
+      - columnName: "priority"
+        type: "varchar"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: false
+        desc: "Task priority: low, medium, high"
+      - columnName: "due_date"
+        type: "date"
+        isPrimaryKey: false
+        isAutoIncrement: false
+        isNullable: true
+        desc: "This is the due date of the todo"

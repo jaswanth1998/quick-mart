@@ -1,0 +1,112 @@
+desc: "This file contains the details of files to be uploaded to the project"
+files:
+  - fileName: "Departments.JSON"
+    purpose: "This file contains Data of the departments table"
+    fileType : "JSON"
+    jsonMapping:
+      -  jsonKey : Description
+         dbColumn : description
+         desc: "This is the description of the department"
+         typeOfField: "string"
+         limations : "No limations"
+      -  dbColumn : store_id
+         jsonKey : key #which means of the array 
+         desc: "This is the store id for the product"
+         typeOfField: "number"
+         limations : "The store id should be present in the stores table otherwise the product will not be uploaded"
+  - fileName: "SKUs.json"
+    purpose: "This file contains Data of the products table which will be keys and values  where keys are store ids and values are array of products"
+    jsonMapping:
+      -  dbColumn : description
+         jsonKey : English_Description
+         desc: "This is the description of the Product Name"
+         typeOfField: "string"
+         limations : "No limations"
+      -  dbColumn : price
+         jsonKey : Price
+         desc: "This is price of the product and it is in cad cents for example 1000 means 10.00 CAD"
+         typeOfField: "float"
+         limations : "No limations"
+      -  dbColumn : ageRestriction
+         jsonKey : Age_Requirements
+         desc: "This is age requirement for purchasing the product"
+         typeOfField: "boolean"
+         limations : "From the file we are getting number of years like 19 or 18 but in the db we are storing it as boolean so if the age is greater than 17 then we will store it as true otherwise false"
+      -  dbColumn : department_id
+         jsonKey : Department
+         desc: "This is the department id for the product"
+         typeOfField: "number"
+         limations : "The department id should be present in the departments table otherwise the product will not be uploaded"
+      -  dbColumn : storeId
+         jsonKey : key #which means of the array 
+         desc: "This is the store id for the product"
+         typeOfField: "number"
+         limations : "The store id should be present in the stores table otherwise the product will not be uploaded"
+      -  dbColumn : tax1
+         jsonKey : TAX1
+         desc: "This is the first tax applicable for the product"
+         typeOfField: "true"
+         limations : "No limations"
+      -  dbColumn : tax2
+         jsonKey : TAX2
+         desc: "This is the second tax applicable for the product"
+         typeOfField: "true"
+         limations : "No limations"
+
+  - fileName: "#shiftId.JSON"
+    purpose: > 
+      "This file contains Transactions of the data Of that shift where the hash `shiftId` is the number of the shift number, 
+      the file will have something like 12074.JSON, 12075.JSON etc where 12074 and 12075 are the shift ids.
+      Theur are four type of transcation one Merchandise, Fuel Sales, Payout and safe Drops. For now we are only fousing on Merchandise and fuel sales."
+    fileType : "JSON"
+    jsonMapping:
+      -  dbColumn : shiftNumber
+         jsonKey : shiftNumber #use the file name for the shift Number
+         desc: "This is the unique id for the shift"
+         typeOfField: "number"
+         limations : "No limations"
+      -  dbColumn : productId
+         jsonKey : x.InputLineItems[i].Item_Number
+         desc: "This is the product id of the product sold in the shift"
+         typeOfField: "number"
+         limations : "The time should be in the format of HH:MM:SS"
+      -  dbColumn : productDescription
+         jsonKey : x.InputLineItems[i].English_Description
+         desc: "This is the description of the product sold in the shift"
+         typeOfField: "string"
+         limations : "No limations"
+      -  dbColumn : quantity
+         jsonKey : x.InputLineItems[i].Net
+         desc: "This is the quantity of the product sold in the shift"
+         typeOfField: "number"
+         limations : "As this is data is from Gas station so for only items sold from the store will be having the net as positive number and for the fuel items the net will be not their so handle accordingly"
+      -  dbColumn : amount
+         jsonKey : x.InputLineItems[i].UnModifiedPrice
+         desc: "This is the total price of the product sold in the shift"
+         typeOfField: "number"
+         limations : "This is will be in the cents so for example 1000 means 10.00 CAD"
+      -  dbColumn: dateTime
+         jsonKey : x.Attributes.BT_Local_Trans_Date + " " + x.Attributes.BT_Local_Trans_Time
+         desc: "This is the date and time of the transaction"
+         typeOfField: "datetime"
+         limations : "The date should be in the format of YYYYMMDD and time should be in the format of HHMMSS"
+      -  dbColumn : isGasTrn
+         jsonKey : x.InputLineItems[i].VPump
+         desc: "This is the boolean which tells whether the transaction is gas transaction or not. If the VPump is present then it is gas transaction otherwise not"
+         typeOfField: "boolean"
+         limations : "No limations"
+      -  dbColumn: "typeOfGas"
+         jsonKey : x.InputLineItems[i].English_Description
+         desc: "This is the type of gas for example Regular, Premium etc"
+         typeOfField: "string"
+         limations : "If the transaction is not gas transaction then this field will be empty"
+      -  dbColumn: "volume"
+         jsonKey : x.InputLineItems[i].MilliLitres
+         desc: "This is the volume of gas in litres"
+         typeOfField: "float4"
+         limations : "The volume will be in millilitres so divide it by 1000 to get the litres"
+      -  dbColumn : pump
+         jsonKey : x.InputLineItems[i].VPump
+         desc:  "This is the pump number from which the gas is sold"
+         typeOfField: "number"
+         limations : "If the transaction is not gas transaction then this field will be empty"

@@ -1,0 +1,91 @@
+project:
+  name: "Quick Gas and Convenience Store"
+  description: >
+    A production-ready React application built with Next.js 15 (App Router),
+    React 18, and TypeScript, using Supabase (PostgreSQL) for authentication,
+    database, and storage. It follows strict coding standards—clean, optimized,
+    modular, and fully normalized up to 3NF. The UI uses Ant Design for a
+    polished, responsive, and enterprise-grade experience.
+
+  stack:
+    frontend:
+      framework: "Next.js 15 (App Router)"
+      library: "React 18 + TypeScript"
+      ui_library: "Ant Design (AntD)"
+      layout_system: "AntD Grid and Flex Layout"
+      theme_customization: "AntD theme tokens and CSS-in-JS styling"
+      state_management: "React Query (TanStack)"
+      form_validation: "React Hook Form + Zod integrated with AntD Form"
+    backend:
+      platform: "Supabase (PostgreSQL)"
+      integration: "Supabase JS client for both server and client contexts"
+      env_variables:
+        - NEXT_PUBLIC_SUPABASE_URL
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY
+        - SUPABASE_SERVICE_ROLE_KEY
+    testing:
+      unit: "Jest + React Testing Library"
+      lint_format: "ESLint + Prettier"
+      ci_cd: "GitHub Actions"
+      precommit: "Husky + lint-staged"
+
+  structure:
+    base_dir: "/src"
+    directories:
+      - app: "Marketing, auth, and dashboard routes with AntD layout"
+      - lib: "Supabase clients, validations, and helper functions"
+      - components: "Reusable UI components built with AntD (Tables, Forms, Modals)"
+      - hooks: "Custom React hooks for queries and state logic"
+      - providers: "Query and context providers (React Query, ThemeProvider)"
+    principle: >
+      Each feature is modular, reusable, and avoids duplication.
+      The developer inspects existing code and UI components before adding new ones
+      to maintain consistency and prevent redundancy.
+
+  database:
+    auth: "Supabase email/password authentication with server-protected routes"
+    normalization: "Up to 3NF (Third Normal Form)"
+    tables:
+      - profiles
+      - projects
+      - tasks
+    constraints:
+      - "Proper foreign keys and indexes"
+      - "Row-level security (RLS) for user-specific access control"
+    optimization:
+      - "Pagination, caching, and query optimization for performance"
+
+  ui_design:
+    library: "Ant Design"
+    components:
+      - "Layout: Header, Sider, Content with Breadcrumbs"
+      - "Forms: AntD Form integrated with React Hook Form"
+      - "Tables: Paginated and filterable AntD Table components"
+      - "Modals: For CRUD operations"
+      - "Notifications: AntD message and notification APIs for UX feedback"
+    responsiveness: "AntD Grid system ensures responsive design across all devices"
+    theming:
+      - "Custom theme tokens for branding colors"
+      - "Light and dark mode support via AntD theme configuration"
+
+  workflow:
+    automation:
+      - "Automated linting, type checking, and testing"
+      - "GitHub Actions CI pipelines for validation"
+    commits:
+      - "Verified using Husky and lint-staged"
+    scripts:
+      - dev: "next dev"
+      - build: "next build"
+      - lint: "eslint ."
+      - test: "jest"
+    ui_principles:
+      - "AntD-based UI components with consistent spacing and design hierarchy"
+      - "Code splitting and lazy loading for routes and AntD modules"
+      - "Memoization and suspense for improved performance"
+
+  philosophy: >
+    Every line of code serves a clear purpose.
+    The architecture is scalable, secure, and maintainable.
+    The developer always reviews existing logic and UI components before adding new ones.
+    The interface remains consistent with Ant Design’s patterns and accessibility standards.
