@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Layout, Menu, Typography, Button, Avatar, Dropdown } from 'antd';
+import { Layout, Menu, Button, Avatar, Dropdown } from 'antd';
 import {
   DashboardOutlined,
   ShopOutlined,
@@ -19,7 +19,6 @@ import { createClient } from '@/lib/supabase/client';
 import type { MenuProps } from 'antd';
 
 const { Header, Sider, Content } = Layout;
-const { Title } = Typography;
 
 type AppLayoutProps = {
   children: React.ReactNode;

@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { Tabs, Tag } from 'antd';
-import { ShoppingCartOutlined, CarOutlined } from '@ant-design/icons';
+import { ShoppingCartOutlined, CarOutlined, DollarOutlined, TrophyOutlined, WalletOutlined } from '@ant-design/icons';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 import { useTransactions, Transaction } from '@/hooks/useTransactions';
 import dayjs, { Dayjs } from 'dayjs';
 import { getDefaultDateRange, formatDateTime } from '@/lib/utils';
 
 export default function TransactionPage() {
-  const [activeTab, setActiveTab] = useState<'merchandise' | 'fuel'>('merchandise');
+  const [activeTab, setActiveTab] = useState<'merchandise' | 'fuel' | 'safedrop' | 'lotto' | 'payout'>('merchandise');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -21,7 +21,10 @@ export default function TransactionPage() {
   // Fetch transactions based on active tab
   const { data: transactionsData, isLoading } = useTransactions({
     search,
-    isGasTrn: activeTab === 'fuel',
+    isGasTrn: activeTab === 'fuel' ? true : activeTab === 'merchandise' ? false : undefined,
+    isSafeDrop: activeTab === 'safedrop',
+    isLotto: activeTab === 'lotto',
+    isPayout: activeTab === 'payout',
     startDate: dateRange[0].format('YYYY-MM-DD'),
     endDate: dateRange[1].format('YYYY-MM-DD'),
     page,
@@ -113,7 +116,7 @@ export default function TransactionPage() {
   ];
 
   const handleTabChange = (key: string) => {
-    setActiveTab(key as 'merchandise' | 'fuel');
+    setActiveTab(key as 'merchandise' | 'fuel' | 'safedrop' | 'lotto' | 'payout');
     setPage(1); // Reset pagination when switching tabs
     setSearch(''); // Clear search when switching tabs
   };
@@ -212,6 +215,274 @@ export default function TransactionPage() {
             exportLabel: 'Export to Excel',
           }}
           exportFileName={`fuel_transactions_${dateRange[0].format('YYYY-MM-DD')}_to_${dateRange[1].format('YYYY-MM-DD')}`}
+        />
+      ),
+    },
+    {
+      key: 'safedrop',
+      label: (
+        <span>
+          <DollarOutlined /> Safe Drops
+        </span>
+      ),
+      children: (
+        <DataTable<Transaction>
+          columns={[
+            {
+              title: 'ID',
+              dataIndex: 'id',
+              key: 'id',
+              width: 80,
+              sorter: (a, b) => a.id - b.id,
+            },
+            {
+              title: 'Shift #',
+              dataIndex: 'shiftNumber',
+              key: 'shiftNumber',
+              width: 100,
+              sorter: (a, b) => a.shiftNumber - b.shiftNumber,
+            },
+            {
+              title: 'Description',
+              dataIndex: 'productDescription',
+              key: 'productDescription',
+              width: 150,
+            },
+            {
+              title: 'Safe Drop Amount',
+              dataIndex: 'safedrop',
+              key: 'safedrop',
+              width: 150,
+              render: (safedrop: number) => (
+                <span style={{ fontWeight: 600, color: '#1890ff', fontSize: '16px' }}>
+                  ${safedrop?.toFixed(2) || '0.00'}
+                </span>
+              ),
+              sorter: (a, b) => (a.safedrop || 0) - (b.safedrop || 0),
+            },
+            {
+              title: 'Date & Time',
+              dataIndex: 'dateTime',
+              key: 'dateTime',
+              width: 180,
+              render: (date: string) => formatDateTime(date),
+              sorter: (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+            },
+          ]}
+          data={transactionsData?.data || []}
+          loading={isLoading}
+          rowKey="id"
+          pagination={{
+            current: page,
+            pageSize: pageSize,
+            total: transactionsData?.total || 0,
+            onChange: (newPage, newPageSize) => {
+              setPage(newPage);
+              setPageSize(newPageSize);
+            },
+          }}
+          search={{
+            placeholder: 'Search by shift number...',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
+              resetFilters();
+            },
+          }}
+          dateFilter={{
+            value: dateRange,
+            onChange: (dates) => {
+              if (dates) {
+                setDateRange(dates);
+                resetFilters();
+              }
+            },
+          }}
+          actions={{
+            exportLabel: 'Export to Excel',
+          }}
+          exportFileName={`safe_drops_${dateRange[0].format('YYYY-MM-DD')}_to_${dateRange[1].format('YYYY-MM-DD')}`}
+        />
+      ),
+    },
+    {
+      key: 'lotto',
+      label: (
+        <span>
+          <TrophyOutlined /> Lotto
+        </span>
+      ),
+      children: (
+        <DataTable<Transaction>
+          columns={[
+            {
+              title: 'ID',
+              dataIndex: 'id',
+              key: 'id',
+              width: 80,
+              sorter: (a, b) => a.id - b.id,
+            },
+            {
+              title: 'Shift #',
+              dataIndex: 'shiftNumber',
+              key: 'shiftNumber',
+              width: 100,
+              sorter: (a, b) => a.shiftNumber - b.shiftNumber,
+            },
+            {
+              title: 'Product ID',
+              dataIndex: 'productId',
+              key: 'productId',
+              width: 100,
+            },
+            {
+              title: 'Description',
+              dataIndex: 'productDescription',
+              key: 'productDescription',
+              width: 150,
+            },
+            {
+              title: 'Lotto Amount',
+              dataIndex: 'lotto',
+              key: 'lotto',
+              width: 150,
+              render: (lotto: number) => (
+                <span style={{ fontWeight: 600, color: '#52c41a', fontSize: '16px' }}>
+                  ${lotto?.toFixed(2) || '0.00'}
+                </span>
+              ),
+              sorter: (a, b) => (a.lotto || 0) - (b.lotto || 0),
+            },
+            {
+              title: 'Date & Time',
+              dataIndex: 'dateTime',
+              key: 'dateTime',
+              width: 180,
+              render: (date: string) => formatDateTime(date),
+              sorter: (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+            },
+          ]}
+          data={transactionsData?.data || []}
+          loading={isLoading}
+          rowKey="id"
+          pagination={{
+            current: page,
+            pageSize: pageSize,
+            total: transactionsData?.total || 0,
+            onChange: (newPage, newPageSize) => {
+              setPage(newPage);
+              setPageSize(newPageSize);
+            },
+          }}
+          search={{
+            placeholder: 'Search by product ID or shift number...',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
+              resetFilters();
+            },
+          }}
+          dateFilter={{
+            value: dateRange,
+            onChange: (dates) => {
+              if (dates) {
+                setDateRange(dates);
+                resetFilters();
+              }
+            },
+          }}
+          actions={{
+            exportLabel: 'Export to Excel',
+          }}
+          exportFileName={`lotto_transactions_${dateRange[0].format('YYYY-MM-DD')}_to_${dateRange[1].format('YYYY-MM-DD')}`}
+        />
+      ),
+    },
+    {
+      key: 'payout',
+      label: (
+        <span>
+          <WalletOutlined /> Payouts
+        </span>
+      ),
+      children: (
+        <DataTable<Transaction>
+          columns={[
+            {
+              title: 'ID',
+              dataIndex: 'id',
+              key: 'id',
+              width: 80,
+              sorter: (a, b) => a.id - b.id,
+            },
+            {
+              title: 'Shift #',
+              dataIndex: 'shiftNumber',
+              key: 'shiftNumber',
+              width: 100,
+              sorter: (a, b) => a.shiftNumber - b.shiftNumber,
+            },
+            {
+              title: 'Payout Type',
+              dataIndex: 'payout_type',
+              key: 'payout_type',
+              width: 200,
+              render: (type: string) => type ? <Tag color="purple">{type}</Tag> : '-',
+            },
+            {
+              title: 'Payout Amount',
+              dataIndex: 'payout',
+              key: 'payout',
+              width: 150,
+              render: (payout: number) => (
+                <span style={{ fontWeight: 600, color: '#f5222d', fontSize: '16px' }}>
+                  ${payout?.toFixed(2) || '0.00'}
+                </span>
+              ),
+              sorter: (a, b) => (a.payout || 0) - (b.payout || 0),
+            },
+            {
+              title: 'Date & Time',
+              dataIndex: 'dateTime',
+              key: 'dateTime',
+              width: 180,
+              render: (date: string) => formatDateTime(date),
+              sorter: (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+            },
+          ]}
+          data={transactionsData?.data || []}
+          loading={isLoading}
+          rowKey="id"
+          pagination={{
+            current: page,
+            pageSize: pageSize,
+            total: transactionsData?.total || 0,
+            onChange: (newPage, newPageSize) => {
+              setPage(newPage);
+              setPageSize(newPageSize);
+            },
+          }}
+          search={{
+            placeholder: 'Search by payout type or shift number...',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
+              resetFilters();
+            },
+          }}
+          dateFilter={{
+            value: dateRange,
+            onChange: (dates) => {
+              if (dates) {
+                setDateRange(dates);
+                resetFilters();
+              }
+            },
+          }}
+          actions={{
+            exportLabel: 'Export to Excel',
+          }}
+          exportFileName={`payout_transactions_${dateRange[0].format('YYYY-MM-DD')}_to_${dateRange[1].format('YYYY-MM-DD')}`}
         />
       ),
     },

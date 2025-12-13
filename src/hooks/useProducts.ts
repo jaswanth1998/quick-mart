@@ -11,6 +11,14 @@ export interface Product {
   ageRestriction: boolean;
   tax1: boolean;
   tax2: boolean;
+  stock: number;
+  low_stock_warning: number;
+  departments?: {
+    id: number;
+    store_id: number;
+    description: string;
+    created_at: string;
+  };
 }
 
 export interface ProductsFilter {
@@ -19,6 +27,7 @@ export interface ProductsFilter {
   ageRestriction?: boolean;
   tax1?: boolean;
   tax2?: boolean;
+  stockFilter?: 'all' | 'low' | 'out';
   startDate?: string;
   endDate?: string;
   page?: number;
@@ -40,6 +49,7 @@ export const useProducts = (filters: ProductsFilter = {}) => {
     ageRestriction,
     tax1,
     tax2,
+    stockFilter,
     startDate,
     endDate,
     page = 1,
@@ -47,7 +57,7 @@ export const useProducts = (filters: ProductsFilter = {}) => {
   } = filters;
 
   return useQuery({
-    queryKey: ['products', { search, departmentId, ageRestriction, tax1, tax2, startDate, endDate, page, pageSize }],
+    queryKey: ['products', { search, departmentId, ageRestriction, tax1, tax2, stockFilter, startDate, endDate, page, pageSize }],
     queryFn: async (): Promise<ProductsResponse> => {
       const supabase = createClient();
 
@@ -58,7 +68,12 @@ export const useProducts = (filters: ProductsFilter = {}) => {
 
       // Apply search filter
       if (search) {
-        query = query.or(`description.ilike.%${search}%,storeId.eq.${search}`);
+        const isNumeric = !isNaN(Number(search));
+        if (isNumeric) {
+          query = query.or(`description.ilike.%${search}%,storeId.eq.${search}`);
+        } else {
+          query = query.ilike('description', `%${search}%`);
+        }
       }
 
       // Apply department filter
@@ -81,12 +96,17 @@ export const useProducts = (filters: ProductsFilter = {}) => {
         query = query.eq('tax2', tax2);
       }
 
-      // Apply date range filter
-      if (startDate && endDate) {
-        query = query
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
+      // Apply stock filter (only out of stock can be filtered server-side)
+      if (stockFilter === 'out') {
+        query = query.lte('stock', 0);
       }
+
+      // // Apply date range filter
+      // if (startDate && endDate) {
+      //   query = query
+      //     .gte('created_at', startDate)
+      //     .lte('created_at', endDate);
+      // }
 
       // Apply pagination
       const from = (page - 1) * pageSize;
@@ -102,11 +122,37 @@ export const useProducts = (filters: ProductsFilter = {}) => {
         throw new Error(error.message);
       }
 
+      // Manually fetch departments and join them
+      let productsWithDepartments = data || [];
+      
+      if (data && data.length > 0) {
+        const departmentIds = [...new Set(data.map(p => p.department_id))];
+        
+        const { data: departments, error: deptError } = await supabase
+          .from('departments')
+          .select('*')
+          .in('store_id', departmentIds);
+
+        if (!deptError && departments) {
+          productsWithDepartments = data.map(product => ({
+            ...product,
+            departments: departments.find(dept => dept.store_id === product.department_id)
+          }));
+        }
+      }
+
+      // Apply low stock filter client-side (column-to-column comparison)
+      if (stockFilter === 'low') {
+        productsWithDepartments = productsWithDepartments.filter(
+          p => p.stock > 0 && p.stock < p.low_stock_warning
+        );
+      }
+
       const total = count || 0;
       const totalPages = Math.ceil(total / pageSize);
-
+      console.log('Products with Departments:', productsWithDepartments);
       return {
-        data: data || [],
+        data: productsWithDepartments,
         total,
         page,
         pageSize,
@@ -173,6 +219,39 @@ export const useUpdateProduct = () => {
       const { data, error } = await supabase
         .from('products')
         .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+export const useUpdateProductStock = () => {
+  const queryClient = useQueryClient();
+  const supabase = createClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      stock,
+      low_stock_warning,
+    }: {
+      id: number;
+      stock: number;
+      low_stock_warning: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('products')
+        .update({ stock, low_stock_warning })
         .eq('id', id)
         .select()
         .single();

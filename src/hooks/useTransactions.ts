@@ -14,11 +14,19 @@ export interface Transaction {
   typeOfGas?: string;
   volume?: number;
   pump?: number;
+  safedrop?: number;
+  lotto?: number;
+  payout?: number;
+  payout_type?: string;
+  trn_type: string;
 }
 
 export interface TransactionsFilter {
   search?: string;
   isGasTrn?: boolean;
+  isSafeDrop?: boolean;
+  isLotto?: boolean;
+  isPayout?: boolean;
   startDate?: string;
   endDate?: string;
   page?: number;
@@ -37,6 +45,9 @@ export const useTransactions = (filters: TransactionsFilter = {}) => {
   const {
     search = '',
     isGasTrn,
+    isSafeDrop,
+    isLotto,
+    isPayout,
     startDate,
     endDate,
     page = 1,
@@ -44,7 +55,7 @@ export const useTransactions = (filters: TransactionsFilter = {}) => {
   } = filters;
 
   return useQuery({
-    queryKey: ['transactions', { search, isGasTrn, startDate, endDate, page, pageSize }],
+    queryKey: ['transactions', { search, isGasTrn, isSafeDrop, isLotto, isPayout, startDate, endDate, page, pageSize }],
     queryFn: async (): Promise<TransactionsResponse> => {
       const supabase = createClient();
 
@@ -61,6 +72,21 @@ export const useTransactions = (filters: TransactionsFilter = {}) => {
       // Filter by transaction type (merchandise vs fuel)
       if (isGasTrn !== undefined) {
         query = query.eq('isGasTrn', isGasTrn);
+      }
+
+      // Filter by safe drop transactions
+      if (isSafeDrop) {
+        query = query.not('safedrop', 'is', null);
+      }
+
+      // Filter by lotto transactions
+      if (isLotto) {
+        query = query.not('lotto', 'is', null);
+      }
+
+      // Filter by payout transactions
+      if (isPayout) {
+        query = query.not('payout', 'is', null);
       }
 
       // Apply date range filter on dateTime field

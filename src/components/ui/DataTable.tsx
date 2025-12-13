@@ -3,10 +3,9 @@
 import React from 'react';
 import { Table, Input, Button, Space, Card, DatePicker, message } from 'antd';
 import { SearchOutlined, DeleteOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons';
-import type { TableProps, ColumnType } from 'antd/es/table';
+import type { ColumnType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import dayjs, { Dayjs } from 'dayjs';
-import { getDefaultDateRange } from '@/lib/utils';
 
 const { RangePicker } = DatePicker;
 
@@ -48,6 +47,7 @@ export interface DataTableProps<T> {
   rowKey?: string | ((record: T) => string);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function DataTable<T extends Record<string, any>>({
   columns,
   data,
@@ -68,8 +68,9 @@ export function DataTable<T extends Record<string, any>>({
       );
 
       // Prepare data for export
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const exportData = data.map((record) => {
-        const row: Record<string, any> = {};
+        const row: Record<string, unknown> = {};
         exportableColumns.forEach((col) => {
           const value = record[col.dataIndex];
           row[col.title] = value !== null && value !== undefined ? value : '';

@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    container_name: quick-mart
+    ports:
+      - "5005:3000"
+    env_file:
+      - .env
+    restart: unless-stopped

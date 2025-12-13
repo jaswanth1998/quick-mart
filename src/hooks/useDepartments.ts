@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { getDefaultDateRange } from '@/lib/utils';
 
 export interface Department {
   id: number;
@@ -46,15 +45,20 @@ export const useDepartments = (filters: DepartmentsFilter = {}) => {
 
       // Apply search filter
       if (search) {
-        query = query.or(`description.ilike.%${search}%,store_id.eq.${search}`);
+        const isNumeric = !isNaN(Number(search));
+        if (isNumeric) {
+          query = query.or(`description.ilike.%${search}%,store_id.eq.${search}`);
+        } else {
+          query = query.ilike('description', `%${search}%`);
+        }
       }
 
-      // Apply date range filter
-      if (startDate && endDate) {
-        query = query
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
-      }
+      // // Apply date range filter
+      // if (startDate && endDate) {
+      //   query = query
+      //     .gte('created_at', startDate)
+      //     .lte('created_at', endDate);
+      // }
 
       // Apply pagination
       const from = (page - 1) * pageSize;

@@ -148,8 +148,9 @@ export default function TodoPage() {
         try {
           await deleteMutation.mutateAsync(record.id);
           message.success('Todo deleted successfully');
-        } catch (error: any) {
-          message.error(error.message || 'Failed to delete todo');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to delete todo';
+          message.error(errorMessage);
         }
       },
     });
@@ -204,11 +205,12 @@ export default function TodoPage() {
       }
 
       handleCloseModal();
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
         return;
       }
-      message.error(error.message || 'Failed to save todo');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save todo';
+      message.error(errorMessage);
     }
   };
 

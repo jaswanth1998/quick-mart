@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Form, Input, Button, Card, Typography, message, Tabs } from 'antd';
+import { Form, Input, Button, Card, Typography, App, Tabs } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -12,8 +12,9 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { message } = App.useApp();
 
-  const handleSignIn = async (values) => {
+  const handleSignIn = async (values: { email: string; password: string }) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -28,14 +29,19 @@ export default function AuthPage() {
         router.push('/dashboard');
         router.refresh();
       }
-    } catch (error) {
-      message.error(error.message || 'Failed to sign in');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      if (err.message === 'Invalid login credentials') {
+        message.error('Email or password is incorrect');
+      } else {
+        message.error(err.message || 'Failed to sign in');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignUp = async (values) => {
+  const handleSignUp = async (values: { email: string; password: string; confirmPassword: string; username: string }) => {
     if (values.password !== values.confirmPassword) {
       message.error('Passwords do not match');
       return;
@@ -58,8 +64,9 @@ export default function AuthPage() {
       if (data.user) {
         message.success('Account created successfully! Please sign in.');
       }
-    } catch (error) {
-      message.error(error.message || 'Failed to sign up');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to sign up';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }

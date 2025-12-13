@@ -75,11 +75,11 @@ export function parseDateTime(dateStr: string, timeStr: string): string {
 /**
  * Trim all string fields in an object
  */
-export function trimObjectStrings<T extends Record<string, any>>(obj: T): T {
-  const result = { ...obj } as any;
+export function trimObjectStrings<T extends Record<string, unknown>>(obj: T): T {
+  const result = { ...obj } as Record<string, unknown>;
   Object.keys(result).forEach((key) => {
     if (typeof result[key] === 'string') {
-      result[key] = result[key].trim();
+      result[key] = (result[key] as string).trim();
     }
   });
   return result as T;

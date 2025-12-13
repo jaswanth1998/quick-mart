@@ -1,6 +1,6 @@
 'use client';
 
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, theme, App } from 'antd';
 import type { ReactNode } from 'react';
 
 export function AntdThemeProvider({ children }: { children: ReactNode }) {
@@ -19,7 +19,9 @@ export function AntdThemeProvider({ children }: { children: ReactNode }) {
         algorithm: theme.defaultAlgorithm,
       }}
     >
-      {children}
+      <App>
+        {children}
+      </App>
     </ConfigProvider>
   );
 }

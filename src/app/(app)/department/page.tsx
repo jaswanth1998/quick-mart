@@ -20,7 +20,7 @@ export default function DepartmentPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
+  const [dateRange] = useState<[Dayjs, Dayjs]>(() => {
     const [startDate, endDate] = getDefaultDateRange();
     return [dayjs(startDate), dayjs(endDate)];
   });
@@ -75,6 +75,7 @@ export default function DepartmentPage() {
   ];
 
   // Handle delete
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDelete = (record: Department) => {
     confirm({
       title: 'Are you sure you want to delete this department?',
@@ -87,14 +88,16 @@ export default function DepartmentPage() {
         try {
           await deleteMutation.mutateAsync(record.id);
           message.success('Department deleted successfully');
-        } catch (error: any) {
-          message.error(error.message || 'Failed to delete department');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to delete department';
+          message.error(errorMessage);
         }
       },
     });
   };
 
   // Handle add/edit modal
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleOpenModal = (department?: Department) => {
     if (department) {
       setEditingDepartment(department);
@@ -133,12 +136,13 @@ export default function DepartmentPage() {
       }
 
       handleCloseModal();
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
         // Form validation error
         return;
       }
-      message.error(error.message || 'Failed to save department');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save department';
+      message.error(errorMessage);
     }
   };
 
@@ -167,22 +171,22 @@ export default function DepartmentPage() {
             setPage(1); // Reset to first page on search
           },
         }}
-        dateFilter={{
-          value: dateRange,
-          onChange: (dates) => {
-            if (dates) {
-              setDateRange(dates);
-              setPage(1); // Reset to first page on date change
-            }
-          },
-        }}
-        actions={{
-          onAdd: () => handleOpenModal(),
-          onDelete: handleDelete,
-          addLabel: 'Add Department',
-          deleteLabel: 'Delete',
-          exportLabel: 'Export to Excel',
-        }}
+        // dateFilter={{
+        //   value: dateRange,
+        //   onChange: (dates) => {
+        //     if (dates) {
+        //       setDateRange(dates);
+        //       setPage(1); // Reset to first page on date change
+        //     }
+        //   },
+        // }}
+        // actions={{
+        //   onAdd: () => handleOpenModal(),
+        //   onDelete: handleDelete,
+        //   addLabel: 'Add Department',
+        //   deleteLabel: 'Delete',
+        //   exportLabel: 'Export to Excel',
+        // }}
         exportFileName="departments"
       />
 

@@ -1,19 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Switch, Space, Tag, message } from 'antd';
-import { ExclamationCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, InputNumber, Select, Switch, Space, Tag, message, Button } from 'antd';
+import { ExclamationCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EditOutlined } from '@ant-design/icons';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 import {
   useProducts,
   useDeleteProduct,
   useCreateProduct,
   useUpdateProduct,
+  useUpdateProductStock,
   Product,
 } from '@/hooks/useProducts';
 import { useDepartments } from '@/hooks/useDepartments';
 import dayjs, { Dayjs } from 'dayjs';
-import { getDefaultDateRange, formatDateTime, centsToDollars } from '@/lib/utils';
+import { getDefaultDateRange, formatDateTime } from '@/lib/utils';
 
 const { confirm } = Modal;
 
@@ -21,7 +22,7 @@ export default function ProductPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
+  const [dateRange] = useState<[Dayjs, Dayjs]>(() => {
     const [startDate, endDate] = getDefaultDateRange();
     return [dayjs(startDate), dayjs(endDate)];
   });
@@ -31,10 +32,13 @@ export default function ProductPage() {
   const [ageRestrictionFilter, setAgeRestrictionFilter] = useState<boolean | undefined>();
   const [tax1Filter, setTax1Filter] = useState<boolean | undefined>();
   const [tax2Filter, setTax2Filter] = useState<boolean | undefined>();
+  const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form] = Form.useForm();
+  const [stockForm] = Form.useForm();
 
   // Fetch products with filters
   const { data: productsData, isLoading } = useProducts({
@@ -43,6 +47,7 @@ export default function ProductPage() {
     ageRestriction: ageRestrictionFilter,
     tax1: tax1Filter,
     tax2: tax2Filter,
+    stockFilter: stockFilter === 'all' ? undefined : stockFilter,
     startDate: dateRange[0].format('YYYY-MM-DD'),
     endDate: dateRange[1].format('YYYY-MM-DD'),
     page,
@@ -55,6 +60,7 @@ export default function ProductPage() {
   const deleteMutation = useDeleteProduct();
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
+  const updateStockMutation = useUpdateProductStock();
 
   // Define table columns
   const columns: DataTableColumn<Product>[] = [
@@ -74,12 +80,11 @@ export default function ProductPage() {
     },
     {
       title: 'Department',
-      dataIndex: 'department_id',
+      dataIndex: 'departments',
       key: 'department_id',
       width: 120,
-      render: (deptId: number) => {
-        const dept = departmentsData?.data.find((d) => d.id === deptId);
-        return dept ? dept.description : `Dept ${deptId}`;
+      render: (departments: { description?: string } | null) => {
+        return departments?.description || 'N/A';
       },
     },
     {
@@ -95,6 +100,32 @@ export default function ProductPage() {
       width: 100,
       render: (price: number) => `$${price.toFixed(2)}`,
       sorter: (a, b) => a.price - b.price,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'stock',
+      key: 'stock',
+      width: 120,
+      render: (stock: number, record: Product) => {
+        let color = 'green';
+        if (stock <= 0) {
+          color = 'red';
+        } else if (stock < record.low_stock_warning) {
+          color = 'orange';
+        }
+        return (
+          <Space>
+            <Tag color={color}>{stock}</Tag>
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleOpenStockModal(record)}
+            />
+          </Space>
+        );
+      },
+      sorter: (a, b) => a.stock - b.stock,
     },
     {
       title: 'Age Restriction',
@@ -139,6 +170,7 @@ export default function ProductPage() {
   ];
 
   // Handle delete
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDelete = (record: Product) => {
     confirm({
       title: 'Are you sure you want to delete this product?',
@@ -151,14 +183,16 @@ export default function ProductPage() {
         try {
           await deleteMutation.mutateAsync(record.id);
           message.success('Product deleted successfully');
-        } catch (error: any) {
-          message.error(error.message || 'Failed to delete product');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to delete product';
+          message.error(errorMessage);
         }
       },
     });
   };
 
   // Handle add/edit modal
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleOpenModal = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
@@ -200,11 +234,50 @@ export default function ProductPage() {
       }
 
       handleCloseModal();
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
         return;
       }
-      message.error(error.message || 'Failed to save product');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save product';
+      message.error(errorMessage);
+    }
+  };
+
+  // Handle stock modal
+  const handleOpenStockModal = (product: Product) => {
+    setEditingProduct(product);
+    stockForm.setFieldsValue({
+      stock: product.stock,
+      low_stock_warning: product.low_stock_warning,
+    });
+    setIsStockModalOpen(true);
+  };
+
+  const handleCloseStockModal = () => {
+    setIsStockModalOpen(false);
+    setEditingProduct(null);
+    stockForm.resetFields();
+  };
+
+  const handleStockSubmit = async () => {
+    try {
+      const values = await stockForm.validateFields();
+
+      if (editingProduct) {
+        await updateStockMutation.mutateAsync({
+          id: editingProduct.id,
+          stock: values.stock,
+          low_stock_warning: values.low_stock_warning,
+        });
+        message.success('Stock updated successfully');
+        handleCloseStockModal();
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
+        return;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update stock';
+      message.error(errorMessage);
     }
   };
 
@@ -227,7 +300,7 @@ export default function ProductPage() {
               loading={!departmentsData}
             >
               {departmentsData?.data.map((dept) => (
-                <Select.Option key={dept.id} value={dept.id}>
+                <Select.Option key={dept.store_id} value={dept.store_id}>
                   {dept.description}
                 </Select.Option>
               ))}
@@ -284,6 +357,22 @@ export default function ProductPage() {
               <Select.Option value={false}>No</Select.Option>
             </Select>
           </div>
+
+          <div>
+            <label style={{ marginRight: 8, fontWeight: 500 }}>Stock Status:</label>
+            <Select
+              style={{ width: 150 }}
+              value={stockFilter}
+              onChange={(value) => {
+                setStockFilter(value);
+                setPage(1);
+              }}
+            >
+              <Select.Option value="all">All</Select.Option>
+              <Select.Option value="low">Low Stock</Select.Option>
+              <Select.Option value="out">Out of Stock</Select.Option>
+            </Select>
+          </div>
         </Space>
       </div>
 
@@ -310,22 +399,7 @@ export default function ProductPage() {
             setPage(1);
           },
         }}
-        dateFilter={{
-          value: dateRange,
-          onChange: (dates) => {
-            if (dates) {
-              setDateRange(dates);
-              setPage(1);
-            }
-          },
-        }}
-        actions={{
-          onAdd: () => handleOpenModal(),
-          onDelete: handleDelete,
-          addLabel: 'Add Product',
-          deleteLabel: 'Delete',
-          exportLabel: 'Export to Excel',
-        }}
+      
         exportFileName="products"
       />
 
@@ -434,6 +508,53 @@ export default function ProductPage() {
               <Switch checkedChildren="Yes" unCheckedChildren="No" />
             </Form.Item>
           </Space>
+        </Form>
+      </Modal>
+
+      {/* Stock Update Modal */}
+      <Modal
+        title="Update Stock"
+        open={isStockModalOpen}
+        onOk={handleStockSubmit}
+        onCancel={handleCloseStockModal}
+        confirmLoading={updateStockMutation.isPending}
+        okText="Update"
+        cancelText="Cancel"
+      >
+        <Form
+          form={stockForm}
+          layout="vertical"
+          style={{ marginTop: 24 }}
+        >
+          <Form.Item
+            name="stock"
+            label="Current Stock"
+            rules={[
+              { required: true, message: 'Please input the stock quantity!' },
+              { type: 'number', message: 'Stock must be a number' },
+            ]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="Enter stock quantity"
+              min={0}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="low_stock_warning"
+            label="Low Stock Warning Level"
+            rules={[
+              { required: true, message: 'Please input the low stock warning level!' },
+              { type: 'number', min: 0, message: 'Warning level must be positive' },
+            ]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="Enter low stock warning level"
+              min={0}
+            />
+          </Form.Item>
         </Form>
       </Modal>
     </div>
