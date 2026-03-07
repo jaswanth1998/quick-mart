@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, Upload, Space, Alert, Typography, Tabs, List, Tag, message } from 'antd';
-import { UploadOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Card, Upload, Space, Alert, Typography, Tabs, List, Tag, message, Progress, Button } from 'antd';
+import { UploadOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { createClient } from '@/lib/supabase/client';
 
 const { Title, Text, Paragraph } = Typography;
@@ -10,17 +10,27 @@ const { Dragger } = Upload;
 
 interface UploadResult {
   fileName: string;
-  status: 'success' | 'error' | 'processing';
+  status: 'success' | 'error' | 'processing' | 'pending';
   message: string;
   recordsProcessed?: number;
   recordsFailed?: number;
   errors?: string[];
 }
 
+interface QueuedFile {
+  id: string;
+  file: File;
+  fileType: string;
+  status: 'pending' | 'processing' | 'success' | 'error';
+  result?: UploadResult;
+}
+
 export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [activeTab, setActiveTab] = useState('departments');
+  const [fileQueue, setFileQueue] = useState<QueuedFile[]>([]);
+  const isProcessingRef = useRef(false);
 
   const processDepartmentsFile = async (fileContent: string, fileName: string): Promise<UploadResult> => {
     const supabase = createClient();
@@ -435,48 +445,128 @@ export default function UploadPage() {
     }
   };
 
-  const handleUpload = async (file: File, fileType: string) => {
+  // Process the queue sequentially
+  const processQueue = useCallback(async () => {
+    if (isProcessingRef.current) return;
+    
+    const pendingFiles = fileQueue.filter(f => f.status === 'pending');
+    if (pendingFiles.length === 0) {
+      setUploading(false);
+      return;
+    }
+
+    isProcessingRef.current = true;
     setUploading(true);
 
-    try {
-      const content = await file.text();
-      let result: UploadResult;
+    for (const queuedFile of pendingFiles) {
+      // Update status to processing
+      setFileQueue(prev => prev.map(f => 
+        f.id === queuedFile.id ? { ...f, status: 'processing' as const } : f
+      ));
 
-      if (fileType === 'departments') {
-        result = await processDepartmentsFile(content, file.name);
-      } else if (fileType === 'products') {
-        // For now, using store ID 1. In production, this should be a user input
-        result = await processProductsFile(content, 1, file.name);
-      } else {
-        // Transaction file
-        result = await processTransactionFile(file.name, content);
+      try {
+        const content = await queuedFile.file.text();
+        let result: UploadResult;
+
+        if (queuedFile.fileType === 'departments') {
+          result = await processDepartmentsFile(content, queuedFile.file.name);
+        } else if (queuedFile.fileType === 'products') {
+          result = await processProductsFile(content, 1, queuedFile.file.name);
+        } else {
+          result = await processTransactionFile(queuedFile.file.name, content);
+        }
+
+        // Update queue with result
+        setFileQueue(prev => prev.map(f => 
+          f.id === queuedFile.id 
+            ? { ...f, status: result.status as 'success' | 'error', result } 
+            : f
+        ));
+
+        // Add to results
+        setResults(prev => [result, ...prev]);
+
+        if (result.status === 'success') {
+          message.success(`${queuedFile.file.name}: ${result.message}`);
+        } else {
+          message.error(`${queuedFile.file.name}: ${result.message}`);
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
+        const errorResult: UploadResult = {
+          fileName: queuedFile.file.name,
+          status: 'error',
+          message: errorMessage,
+        };
+
+        setFileQueue(prev => prev.map(f => 
+          f.id === queuedFile.id 
+            ? { ...f, status: 'error' as const, result: errorResult } 
+            : f
+        ));
+
+        setResults(prev => [errorResult, ...prev]);
+        message.error(`${queuedFile.file.name}: ${errorMessage}`);
       }
-
-      setResults((prev) => [result, ...prev]);
-
-      if (result.status === 'success') {
-        message.success(result.message);
-      } else {
-        message.error(result.message);
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
-      message.error(errorMessage);
-    } finally {
-      setUploading(false);
     }
+
+    isProcessingRef.current = false;
+    setUploading(false);
+  }, [fileQueue]);
+
+  // Start processing when files are added to queue
+  useEffect(() => {
+    const hasPendingFiles = fileQueue.some(f => f.status === 'pending');
+    if (hasPendingFiles && !isProcessingRef.current) {
+      processQueue();
+    }
+  }, [fileQueue, processQueue]);
+
+  const addFilesToQueue = (files: File[], fileType: string) => {
+    const newQueuedFiles: QueuedFile[] = files.map(file => ({
+      id: `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      file,
+      fileType,
+      status: 'pending' as const,
+    }));
+
+    setFileQueue(prev => [...prev, ...newQueuedFiles]);
+  };
+
+  const removeFromQueue = (id: string) => {
+    setFileQueue(prev => prev.filter(f => f.id !== id));
+  };
+
+  const clearCompletedFromQueue = () => {
+    setFileQueue(prev => prev.filter(f => f.status === 'pending' || f.status === 'processing'));
   };
 
   const uploadProps = (fileType: string) => ({
     name: 'file',
-    multiple: false,
+    multiple: true,
     accept: '.json,.JSON',
-    beforeUpload: (file: File) => {
-      handleUpload(file, fileType);
+    beforeUpload: (_file: File, fileList: File[]) => {
+      // Only add files once (when the first file is processed)
+      if (fileList.indexOf(_file) === 0) {
+        addFilesToQueue(fileList, fileType);
+      }
       return false; // Prevent automatic upload
     },
     showUploadList: false,
   });
+
+  const getQueueStats = () => {
+    const total = fileQueue.length;
+    const completed = fileQueue.filter(f => f.status === 'success' || f.status === 'error').length;
+    const pending = fileQueue.filter(f => f.status === 'pending').length;
+    const processing = fileQueue.filter(f => f.status === 'processing').length;
+    const success = fileQueue.filter(f => f.status === 'success').length;
+    const error = fileQueue.filter(f => f.status === 'error').length;
+
+    return { total, completed, pending, processing, success, error };
+  };
+
+  const stats = getQueueStats();
 
   const tabItems = [
     {
@@ -486,7 +576,7 @@ export default function UploadPage() {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Alert
             message="Upload Departments File"
-            description="Upload a Departments.JSON file. The file should contain department data with keys as department IDs and values containing Description field."
+            description="Upload one or more Departments.JSON files. The files should contain department data with keys as department IDs and values containing Description field."
             type="info"
             showIcon
           />
@@ -494,9 +584,9 @@ export default function UploadPage() {
             <p className="ant-upload-drag-icon">
               {uploading ? <LoadingOutlined /> : <UploadOutlined />}
             </p>
-            <p className="ant-upload-text">Click or drag Departments.JSON to this area</p>
+            <p className="ant-upload-text">Click or drag Departments.JSON file(s) to this area</p>
             <p className="ant-upload-hint">
-              Supports JSON format only. File will be processed immediately.
+              Supports multiple JSON files. Files will be processed sequentially in a queue.
             </p>
           </Dragger>
         </Space>
@@ -509,7 +599,7 @@ export default function UploadPage() {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Alert
             message="Upload Products File"
-            description="Upload a SKUs.json file. The file should contain store IDs as keys with arrays of products as values."
+            description="Upload one or more SKUs.json files. The files should contain store IDs as keys with arrays of products as values."
             type="info"
             showIcon
           />
@@ -517,9 +607,9 @@ export default function UploadPage() {
             <p className="ant-upload-drag-icon">
               {uploading ? <LoadingOutlined /> : <UploadOutlined />}
             </p>
-            <p className="ant-upload-text">Click or drag SKUs.json to this area</p>
+            <p className="ant-upload-text">Click or drag SKUs.json file(s) to this area</p>
             <p className="ant-upload-hint">
-              Supports JSON format only. File will be processed immediately.
+              Supports multiple JSON files. Files will be processed sequentially in a queue.
             </p>
           </Dragger>
         </Space>
@@ -532,7 +622,7 @@ export default function UploadPage() {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Alert
             message="Upload Transaction Files"
-            description="Upload transaction files named with shift numbers (e.g., 12074.JSON, 12075.JSON). Files contain transaction data for merchandise and fuel sales."
+            description="Upload multiple transaction files named with shift numbers (e.g., 12074.JSON, 12075.JSON). Files contain transaction data for merchandise and fuel sales."
             type="info"
             showIcon
           />
@@ -540,9 +630,9 @@ export default function UploadPage() {
             <p className="ant-upload-drag-icon">
               {uploading ? <LoadingOutlined /> : <UploadOutlined />}
             </p>
-            <p className="ant-upload-text">Click or drag transaction file to this area</p>
+            <p className="ant-upload-text">Click or drag transaction file(s) to this area</p>
             <p className="ant-upload-hint">
-              File name should be in format: shiftNumber.JSON (e.g., 12074.JSON)
+              Supports multiple files. File names should be in format: shiftNumber.JSON (e.g., 12074.JSON)
             </p>
           </Dragger>
         </Space>
@@ -557,7 +647,7 @@ export default function UploadPage() {
           <Title level={2}>File Upload</Title>
           <Paragraph>
             Upload JSON files to import departments, products, and transactions into the system.
-            Select the appropriate tab for the file type you want to upload.
+            Select the appropriate tab for the file type you want to upload. You can select multiple files at once.
           </Paragraph>
         </Card>
 
@@ -566,6 +656,100 @@ export default function UploadPage() {
           onChange={setActiveTab}
           items={tabItems}
         />
+
+        {fileQueue.length > 0 && (
+          <Card 
+            title={
+              <Space>
+                <span>Upload Queue</span>
+                <Tag color="blue">{stats.total} files</Tag>
+                {stats.processing > 0 && <Tag color="processing">Processing: {stats.processing}</Tag>}
+                {stats.pending > 0 && <Tag color="default">Pending: {stats.pending}</Tag>}
+                {stats.success > 0 && <Tag color="success">Success: {stats.success}</Tag>}
+                {stats.error > 0 && <Tag color="error">Failed: {stats.error}</Tag>}
+              </Space>
+            }
+            extra={
+              stats.completed > 0 && (
+                <Button size="small" onClick={clearCompletedFromQueue}>
+                  Clear Completed
+                </Button>
+              )
+            }
+          >
+            {stats.total > 0 && (
+              <Progress 
+                percent={Math.round((stats.completed / stats.total) * 100)} 
+                status={stats.error > 0 && stats.pending === 0 && stats.processing === 0 ? 'exception' : undefined}
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            <List
+              size="small"
+              dataSource={fileQueue}
+              renderItem={(item) => (
+                <List.Item
+                  actions={
+                    item.status === 'pending' ? [
+                      <Button 
+                        key="remove"
+                        type="text" 
+                        size="small" 
+                        danger 
+                        icon={<DeleteOutlined />}
+                        onClick={() => removeFromQueue(item.id)}
+                      />
+                    ] : undefined
+                  }
+                >
+                  <List.Item.Meta
+                    avatar={
+                      item.status === 'success' ? (
+                        <CheckCircleOutlined style={{ fontSize: 20, color: '#52c41a' }} />
+                      ) : item.status === 'error' ? (
+                        <CloseCircleOutlined style={{ fontSize: 20, color: '#ff4d4f' }} />
+                      ) : item.status === 'processing' ? (
+                        <LoadingOutlined style={{ fontSize: 20, color: '#1890ff' }} />
+                      ) : (
+                        <ClockCircleOutlined style={{ fontSize: 20, color: '#8c8c8c' }} />
+                      )
+                    }
+                    title={
+                      <Space>
+                        <Text>{item.file.name}</Text>
+                        <Tag color={
+                          item.status === 'success' ? 'success' : 
+                          item.status === 'error' ? 'error' : 
+                          item.status === 'processing' ? 'processing' : 
+                          'default'
+                        }>
+                          {item.status}
+                        </Tag>
+                        <Tag>{item.fileType}</Tag>
+                      </Space>
+                    }
+                    description={
+                      item.result ? (
+                        <Space direction="vertical" size="small">
+                          <Text type="secondary">{item.result.message}</Text>
+                          {item.result.recordsProcessed !== undefined && (
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              Processed: {item.result.recordsProcessed} | Failed: {item.result.recordsFailed || 0}
+                            </Text>
+                          )}
+                        </Space>
+                      ) : item.status === 'pending' ? (
+                        <Text type="secondary">Waiting in queue...</Text>
+                      ) : (
+                        <Text type="secondary">Processing...</Text>
+                      )
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+        )}
 
         {results.length > 0 && (
           <Card title="Upload Results">

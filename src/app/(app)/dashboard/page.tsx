@@ -55,7 +55,7 @@ export default function DashboardPage() {
       const data = transactions || [];
 
       // Merchandise analytics
-      const merchandiseTransactions = data.filter(t => t.trn_type === 'merchandise');
+      const merchandiseTransactions = data
       const merchandiseTotalAmount = merchandiseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
       const merchandiseUniqueShifts = new Set(merchandiseTransactions.map(t => t.shiftNumber)).size;
 
