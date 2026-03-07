@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Switch, Space, Tag, message, Button } from 'antd';
-import { ExclamationCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EditOutlined } from '@ant-design/icons';
+import { Pencil, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
+import { Modal, ConfirmModal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
 import {
   useProducts,
   useDeleteProduct,
@@ -16,8 +17,6 @@ import { useDepartments } from '@/hooks/useDepartments';
 import dayjs, { Dayjs } from 'dayjs';
 import { getDefaultDateRange, formatDateTime } from '@/lib/utils';
 
-const { confirm } = Modal;
-
 export default function ProductPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -27,26 +26,36 @@ export default function ProductPage() {
     return [dayjs(startDate), dayjs(endDate)];
   });
 
-  // Filter states
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>();
-  const [ageRestrictionFilter, setAgeRestrictionFilter] = useState<boolean | undefined>();
-  const [tax1Filter, setTax1Filter] = useState<boolean | undefined>();
-  const [tax2Filter, setTax2Filter] = useState<boolean | undefined>();
+  const [ageRestrictionFilter, setAgeRestrictionFilter] = useState<string>('');
+  const [tax1Filter, setTax1Filter] = useState<string>('');
+  const [tax2Filter, setTax2Filter] = useState<string>('');
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [form] = Form.useForm();
-  const [stockForm] = Form.useForm();
+  const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
+  const toast = useToast();
 
-  // Fetch products with filters
+  // Form state
+  const [formData, setFormData] = useState({
+    storeId: '',
+    department_id: '',
+    description: '',
+    price: '',
+    ageRestriction: false,
+    tax1: false,
+    tax2: false,
+  });
+  const [stockData, setStockData] = useState({ stock: '', low_stock_warning: '' });
+
   const { data: productsData, isLoading } = useProducts({
     search,
     departmentId: selectedDepartment,
-    ageRestriction: ageRestrictionFilter,
-    tax1: tax1Filter,
-    tax2: tax2Filter,
+    ageRestriction: ageRestrictionFilter ? ageRestrictionFilter === 'true' : undefined,
+    tax1: tax1Filter ? tax1Filter === 'true' : undefined,
+    tax2: tax2Filter ? tax2Filter === 'true' : undefined,
     stockFilter: stockFilter === 'all' ? undefined : stockFilter,
     startDate: dateRange[0].format('YYYY-MM-DD'),
     endDate: dateRange[1].format('YYYY-MM-DD'),
@@ -54,326 +63,202 @@ export default function ProductPage() {
     pageSize,
   });
 
-  // Fetch departments for dropdown
   const { data: departmentsData } = useDepartments({ pageSize: 1000 });
-
   const deleteMutation = useDeleteProduct();
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const updateStockMutation = useUpdateProductStock();
 
-  // Define table columns
   const columns: DataTableColumn<Product>[] = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 80, sorter: (a, b) => a.id - b.id },
+    { title: 'Store ID', dataIndex: 'storeId', key: 'storeId', width: 100, sorter: (a, b) => a.storeId - b.storeId },
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-      sorter: (a, b) => a.id - b.id,
+      title: 'Department', dataIndex: 'departments', key: 'department_id', width: 120,
+      render: (departments) => (departments as { description?: string } | null)?.description || 'N/A',
     },
+    { title: 'Description', dataIndex: 'description', key: 'description', ellipsis: true },
     {
-      title: 'Store ID',
-      dataIndex: 'storeId',
-      key: 'storeId',
-      width: 100,
-      sorter: (a, b) => a.storeId - b.storeId,
-    },
-    {
-      title: 'Department',
-      dataIndex: 'departments',
-      key: 'department_id',
-      width: 120,
-      render: (departments: { description?: string } | null) => {
-        return departments?.description || 'N/A';
-      },
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      width: 100,
-      render: (price: number) => `$${price.toFixed(2)}`,
+      title: 'Price', dataIndex: 'price', key: 'price', width: 100,
+      render: (price) => `$${(price as number).toFixed(2)}`,
       sorter: (a, b) => a.price - b.price,
     },
     {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-      width: 120,
-      render: (stock: number, record: Product) => {
-        let color = 'green';
-        if (stock <= 0) {
-          color = 'red';
-        } else if (stock < record.low_stock_warning) {
-          color = 'orange';
-        }
+      title: 'Stock', dataIndex: 'stock', key: 'stock', width: 130,
+      render: (_val, record) => {
+        const stock = record.stock;
+        const color = stock <= 0 ? 'badge-red' : stock < record.low_stock_warning ? 'badge-orange' : 'badge-green';
         return (
-          <Space>
-            <Tag color={color}>{stock}</Tag>
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
+          <div className="flex items-center gap-2">
+            <span className={color}>{stock}</span>
+            <button
               onClick={() => handleOpenStockModal(record)}
-            />
-          </Space>
+              className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          </div>
         );
       },
       sorter: (a, b) => a.stock - b.stock,
     },
     {
-      title: 'Age Restriction',
-      dataIndex: 'ageRestriction',
-      key: 'ageRestriction',
-      width: 140,
-      render: (restricted: boolean) =>
+      title: 'Age Restriction', dataIndex: 'ageRestriction', key: 'ageRestriction', width: 140,
+      render: (restricted) =>
         restricted ? (
-          <Tag color="orange" icon={<CheckCircleOutlined />}>
-            Yes
-          </Tag>
+          <span className="badge-orange"><CheckCircle className="w-3 h-3 mr-1" />Yes</span>
         ) : (
-          <Tag color="green" icon={<CloseCircleOutlined />}>
-            No
-          </Tag>
+          <span className="badge-green"><XCircle className="w-3 h-3 mr-1" />No</span>
         ),
     },
     {
-      title: 'Tax 1',
-      dataIndex: 'tax1',
-      key: 'tax1',
-      width: 80,
-      render: (tax: boolean) =>
-        tax ? <Tag color="blue">Yes</Tag> : <Tag>No</Tag>,
+      title: 'Tax 1', dataIndex: 'tax1', key: 'tax1', width: 80,
+      render: (tax) => tax ? <span className="badge-blue">Yes</span> : <span className="badge-gray">No</span>,
     },
     {
-      title: 'Tax 2',
-      dataIndex: 'tax2',
-      key: 'tax2',
-      width: 80,
-      render: (tax: boolean) =>
-        tax ? <Tag color="blue">Yes</Tag> : <Tag>No</Tag>,
+      title: 'Tax 2', dataIndex: 'tax2', key: 'tax2', width: 80,
+      render: (tax) => tax ? <span className="badge-blue">Yes</span> : <span className="badge-gray">No</span>,
     },
     {
-      title: 'Created At',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 180,
-      render: (date: string) => formatDateTime(date),
+      title: 'Created At', dataIndex: 'created_at', key: 'created_at', width: 180,
+      render: (date) => formatDateTime(date as string),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
   ];
 
-  // Handle delete
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDelete = (record: Product) => {
-    confirm({
-      title: 'Are you sure you want to delete this product?',
-      icon: <ExclamationCircleOutlined />,
-      content: `Product: ${record.description} (ID: ${record.id})`,
-      okText: 'Yes',
-      okType: 'danger',
-      cancelText: 'No',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync(record.id);
-          message.success('Product deleted successfully');
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to delete product';
-          message.error(errorMessage);
-        }
-      },
-    });
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast.success('Product deleted successfully');
+      setConfirmDelete(null);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete product');
+    }
   };
 
-  // Handle add/edit modal
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleOpenModal = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
-      form.setFieldsValue({
-        storeId: product.storeId,
-        department_id: product.department_id,
+      setFormData({
+        storeId: String(product.storeId),
+        department_id: String(product.department_id),
         description: product.description,
-        price: product.price,
+        price: String(product.price),
         ageRestriction: product.ageRestriction,
         tax1: product.tax1,
         tax2: product.tax2,
       });
     } else {
       setEditingProduct(null);
-      form.resetFields();
+      setFormData({ storeId: '', department_id: '', description: '', price: '', ageRestriction: false, tax1: false, tax2: false });
     }
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingProduct(null);
-    form.resetFields();
-  };
-
   const handleSubmit = async () => {
+    if (!formData.storeId || !formData.department_id || !formData.description || !formData.price) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     try {
-      const values = await form.validateFields();
+      const values = {
+        storeId: Number(formData.storeId),
+        department_id: Number(formData.department_id),
+        description: formData.description,
+        price: Number(formData.price),
+        ageRestriction: formData.ageRestriction,
+        tax1: formData.tax1,
+        tax2: formData.tax2,
+        stock: 0,
+        low_stock_warning: 10,
+      };
 
       if (editingProduct) {
-        await updateMutation.mutateAsync({
-          id: editingProduct.id,
-          ...values,
-        });
-        message.success('Product updated successfully');
+        await updateMutation.mutateAsync({ id: editingProduct.id, ...values });
+        toast.success('Product updated successfully');
       } else {
         await createMutation.mutateAsync(values);
-        message.success('Product created successfully');
+        toast.success('Product created successfully');
       }
-
-      handleCloseModal();
+      setIsModalOpen(false);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
-        return;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save product';
-      message.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Failed to save product');
     }
   };
 
-  // Handle stock modal
   const handleOpenStockModal = (product: Product) => {
     setEditingProduct(product);
-    stockForm.setFieldsValue({
-      stock: product.stock,
-      low_stock_warning: product.low_stock_warning,
-    });
+    setStockData({ stock: String(product.stock), low_stock_warning: String(product.low_stock_warning) });
     setIsStockModalOpen(true);
   };
 
-  const handleCloseStockModal = () => {
-    setIsStockModalOpen(false);
-    setEditingProduct(null);
-    stockForm.resetFields();
-  };
-
   const handleStockSubmit = async () => {
+    if (!editingProduct || !stockData.stock) return;
     try {
-      const values = await stockForm.validateFields();
-
-      if (editingProduct) {
-        await updateStockMutation.mutateAsync({
-          id: editingProduct.id,
-          stock: values.stock,
-          low_stock_warning: values.low_stock_warning,
-        });
-        message.success('Stock updated successfully');
-        handleCloseStockModal();
-      }
+      await updateStockMutation.mutateAsync({
+        id: editingProduct.id,
+        stock: Number(stockData.stock),
+        low_stock_warning: Number(stockData.low_stock_warning),
+      });
+      toast.success('Stock updated successfully');
+      setIsStockModalOpen(false);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
-        return;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update stock';
-      message.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Failed to update stock');
     }
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      {/* Additional Filters */}
-      <div style={{ marginBottom: 16, padding: '16px', background: '#fafafa', borderRadius: '8px' }}>
-        <Space wrap size="middle">
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Department:</label>
-            <Select
-              style={{ width: 200 }}
-              placeholder="All Departments"
-              allowClear
-              value={selectedDepartment}
-              onChange={(value) => {
-                setSelectedDepartment(value);
-                setPage(1);
-              }}
-              loading={!departmentsData}
+            <label className="label">Department</label>
+            <select
+              className="select w-48"
+              value={selectedDepartment ?? ''}
+              onChange={(e) => { setSelectedDepartment(e.target.value ? Number(e.target.value) : undefined); setPage(1); }}
             >
+              <option value="">All Departments</option>
               {departmentsData?.data.map((dept) => (
-                <Select.Option key={dept.store_id} value={dept.store_id}>
-                  {dept.description}
-                </Select.Option>
+                <option key={dept.store_id} value={dept.store_id}>{dept.description}</option>
               ))}
-            </Select>
+            </select>
           </div>
-
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Age Restriction:</label>
-            <Select
-              style={{ width: 150 }}
-              placeholder="All"
-              allowClear
-              value={ageRestrictionFilter}
-              onChange={(value) => {
-                setAgeRestrictionFilter(value);
-                setPage(1);
-              }}
-            >
-              <Select.Option value={true}>Yes</Select.Option>
-              <Select.Option value={false}>No</Select.Option>
-            </Select>
+            <label className="label">Age Restriction</label>
+            <select className="select w-36" value={ageRestrictionFilter} onChange={(e) => { setAgeRestrictionFilter(e.target.value); setPage(1); }}>
+              <option value="">All</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
           </div>
-
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Tax 1:</label>
-            <Select
-              style={{ width: 120 }}
-              placeholder="All"
-              allowClear
-              value={tax1Filter}
-              onChange={(value) => {
-                setTax1Filter(value);
-                setPage(1);
-              }}
-            >
-              <Select.Option value={true}>Yes</Select.Option>
-              <Select.Option value={false}>No</Select.Option>
-            </Select>
+            <label className="label">Tax 1</label>
+            <select className="select w-28" value={tax1Filter} onChange={(e) => { setTax1Filter(e.target.value); setPage(1); }}>
+              <option value="">All</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
           </div>
-
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Tax 2:</label>
-            <Select
-              style={{ width: 120 }}
-              placeholder="All"
-              allowClear
-              value={tax2Filter}
-              onChange={(value) => {
-                setTax2Filter(value);
-                setPage(1);
-              }}
-            >
-              <Select.Option value={true}>Yes</Select.Option>
-              <Select.Option value={false}>No</Select.Option>
-            </Select>
+            <label className="label">Tax 2</label>
+            <select className="select w-28" value={tax2Filter} onChange={(e) => { setTax2Filter(e.target.value); setPage(1); }}>
+              <option value="">All</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
           </div>
-
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Stock Status:</label>
-            <Select
-              style={{ width: 150 }}
-              value={stockFilter}
-              onChange={(value) => {
-                setStockFilter(value);
-                setPage(1);
-              }}
-            >
-              <Select.Option value="all">All</Select.Option>
-              <Select.Option value="low">Low Stock</Select.Option>
-              <Select.Option value="out">Out of Stock</Select.Option>
-            </Select>
+            <label className="label">Stock Status</label>
+            <select className="select w-36" value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as 'all' | 'low' | 'out'); setPage(1); }}>
+              <option value="all">All</option>
+              <option value="low">Low Stock</option>
+              <option value="out">Out of Stock</option>
+            </select>
           </div>
-        </Space>
+        </div>
       </div>
 
       <DataTable<Product>
@@ -384,179 +269,115 @@ export default function ProductPage() {
         rowKey="id"
         pagination={{
           current: page,
-          pageSize: pageSize,
+          pageSize,
           total: productsData?.total || 0,
-          onChange: (newPage, newPageSize) => {
-            setPage(newPage);
-            setPageSize(newPageSize);
-          },
+          onChange: (newPage, newPageSize) => { setPage(newPage); setPageSize(newPageSize); },
         }}
         search={{
           placeholder: 'Search by description or store ID...',
           value: search,
-          onChange: (value) => {
-            setSearch(value);
-            setPage(1);
-          },
+          onChange: (value) => { setSearch(value); setPage(1); },
         }}
-      
         exportFileName="products"
       />
 
       {/* Add/Edit Modal */}
       <Modal
-        title={editingProduct ? 'Edit Product' : 'Add Product'}
         open={isModalOpen}
-        onOk={handleSubmit}
-        onCancel={handleCloseModal}
-        confirmLoading={createMutation.isPending || updateMutation.isPending}
-        okText="Save"
-        cancelText="Cancel"
-        width={600}
+        onClose={() => setIsModalOpen(false)}
+        title={editingProduct ? 'Edit Product' : 'Add Product'}
+        width="max-w-xl"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button className="btn-primary" onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save'}
+            </button>
+          </>
+        }
       >
-        <Form
-          form={form}
-          layout="vertical"
-          style={{ marginTop: 24 }}
-        >
-          <Form.Item
-            name="storeId"
-            label="Store ID"
-            rules={[
-              { required: true, message: 'Please input the store ID!' },
-              { type: 'number', min: 1, message: 'Store ID must be greater than 0' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Enter store ID"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="department_id"
-            label="Department"
-            rules={[{ required: true, message: 'Please select a department!' }]}
-          >
-            <Select
-              placeholder="Select department"
-              loading={!departmentsData}
-            >
+        <div className="space-y-4">
+          <div>
+            <label className="label">Store ID <span className="text-red-500">*</span></label>
+            <input type="number" className="input" placeholder="Enter store ID" value={formData.storeId}
+              onChange={(e) => setFormData({ ...formData, storeId: e.target.value })} min={1} />
+          </div>
+          <div>
+            <label className="label">Department <span className="text-red-500">*</span></label>
+            <select className="select" value={formData.department_id}
+              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}>
+              <option value="">Select department</option>
               {departmentsData?.data.map((dept) => (
-                <Select.Option key={dept.id} value={dept.id}>
-                  {dept.description}
-                </Select.Option>
+                <option key={dept.id} value={dept.id}>{dept.description}</option>
               ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[
-              { required: true, message: 'Please input the description!' },
-              { max: 255, message: 'Description must be less than 255 characters' },
-            ]}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Enter product description"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="price"
-            label="Price (USD)"
-            rules={[
-              { required: true, message: 'Please input the price!' },
-              { type: 'number', min: 0, message: 'Price must be positive' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="0.00"
-              precision={2}
-              prefix="$"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="ageRestriction"
-            label="Age Restriction"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch checkedChildren="Yes" unCheckedChildren="No" />
-          </Form.Item>
-
-          <Space size="large">
-            <Form.Item
-              name="tax1"
-              label="Tax 1"
-              valuePropName="checked"
-              initialValue={false}
-            >
-              <Switch checkedChildren="Yes" unCheckedChildren="No" />
-            </Form.Item>
-
-            <Form.Item
-              name="tax2"
-              label="Tax 2"
-              valuePropName="checked"
-              initialValue={false}
-            >
-              <Switch checkedChildren="Yes" unCheckedChildren="No" />
-            </Form.Item>
-          </Space>
-        </Form>
+            </select>
+          </div>
+          <div>
+            <label className="label">Description <span className="text-red-500">*</span></label>
+            <textarea className="input" rows={3} placeholder="Enter product description" value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })} maxLength={255} />
+          </div>
+          <div>
+            <label className="label">Price (USD) <span className="text-red-500">*</span></label>
+            <input type="number" className="input" placeholder="0.00" step="0.01" min="0" value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
+          </div>
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={formData.ageRestriction} onChange={(e) => setFormData({ ...formData, ageRestriction: e.target.checked })} />
+              <span className="text-sm text-gray-700">Age Restriction</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={formData.tax1} onChange={(e) => setFormData({ ...formData, tax1: e.target.checked })} />
+              <span className="text-sm text-gray-700">Tax 1</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={formData.tax2} onChange={(e) => setFormData({ ...formData, tax2: e.target.checked })} />
+              <span className="text-sm text-gray-700">Tax 2</span>
+            </label>
+          </div>
+        </div>
       </Modal>
 
-      {/* Stock Update Modal */}
+      {/* Stock Modal */}
       <Modal
-        title="Update Stock"
         open={isStockModalOpen}
-        onOk={handleStockSubmit}
-        onCancel={handleCloseStockModal}
-        confirmLoading={updateStockMutation.isPending}
-        okText="Update"
-        cancelText="Cancel"
+        onClose={() => setIsStockModalOpen(false)}
+        title="Update Stock"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => setIsStockModalOpen(false)}>Cancel</button>
+            <button className="btn-primary" onClick={handleStockSubmit} disabled={updateStockMutation.isPending}>
+              {updateStockMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Updating...</> : 'Update'}
+            </button>
+          </>
+        }
       >
-        <Form
-          form={stockForm}
-          layout="vertical"
-          style={{ marginTop: 24 }}
-        >
-          <Form.Item
-            name="stock"
-            label="Current Stock"
-            rules={[
-              { required: true, message: 'Please input the stock quantity!' },
-              { type: 'number', message: 'Stock must be a number' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Enter stock quantity"
-              min={0}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="low_stock_warning"
-            label="Low Stock Warning Level"
-            rules={[
-              { required: true, message: 'Please input the low stock warning level!' },
-              { type: 'number', min: 0, message: 'Warning level must be positive' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Enter low stock warning level"
-              min={0}
-            />
-          </Form.Item>
-        </Form>
+        <div className="space-y-4">
+          <div>
+            <label className="label">Current Stock <span className="text-red-500">*</span></label>
+            <input type="number" className="input" placeholder="Enter stock quantity" min={0}
+              value={stockData.stock} onChange={(e) => setStockData({ ...stockData, stock: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Low Stock Warning Level <span className="text-red-500">*</span></label>
+            <input type="number" className="input" placeholder="Enter low stock warning level" min={0}
+              value={stockData.low_stock_warning} onChange={(e) => setStockData({ ...stockData, low_stock_warning: e.target.value })} />
+          </div>
+        </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Product"
+        message={`Are you sure you want to delete "${confirmDelete?.description}" (ID: ${confirmDelete?.id})?`}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

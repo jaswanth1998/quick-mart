@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Modal, Form, Input, InputNumber, message } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Loader2 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
+import { Modal, ConfirmModal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
 import {
   useDepartments,
   useDeleteDepartment,
@@ -13,8 +14,6 @@ import {
 } from '@/hooks/useDepartments';
 import dayjs, { Dayjs } from 'dayjs';
 import { getDefaultDateRange, formatDateTime } from '@/lib/utils';
-
-const { confirm } = Modal;
 
 export default function DepartmentPage() {
   const [search, setSearch] = useState('');
@@ -27,9 +26,13 @@ export default function DepartmentPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
-  const [form] = Form.useForm();
+  const [confirmDelete, setConfirmDelete] = useState<Department | null>(null);
+  const toast = useToast();
 
-  // Fetch departments with filters
+  // Form state
+  const [formStoreId, setFormStoreId] = useState('');
+  const [formDescription, setFormDescription] = useState('');
+
   const { data: departmentsData, isLoading } = useDepartments({
     search,
     startDate: dateRange[0].format('YYYY-MM-DD'),
@@ -42,7 +45,6 @@ export default function DepartmentPage() {
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
 
-  // Define table columns
   const columns: DataTableColumn<Department>[] = [
     {
       title: 'ID',
@@ -69,45 +71,32 @@ export default function DepartmentPage() {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date: string) => formatDateTime(date),
+      render: (date) => formatDateTime(date as string),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
   ];
 
-  // Handle delete
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDelete = (record: Department) => {
-    confirm({
-      title: 'Are you sure you want to delete this department?',
-      icon: <ExclamationCircleOutlined />,
-      content: `Department: ${record.description} (ID: ${record.id})`,
-      okText: 'Yes',
-      okType: 'danger',
-      cancelText: 'No',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync(record.id);
-          message.success('Department deleted successfully');
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to delete department';
-          message.error(errorMessage);
-        }
-      },
-    });
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast.success('Department deleted successfully');
+      setConfirmDelete(null);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete department';
+      toast.error(errorMessage);
+    }
   };
 
-  // Handle add/edit modal
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleOpenModal = (department?: Department) => {
     if (department) {
       setEditingDepartment(department);
-      form.setFieldsValue({
-        store_id: department.store_id,
-        description: department.description,
-      });
+      setFormStoreId(String(department.store_id));
+      setFormDescription(department.description);
     } else {
       setEditingDepartment(null);
-      form.resetFields();
+      setFormStoreId('');
+      setFormDescription('');
     }
     setIsModalOpen(true);
   };
@@ -115,39 +104,35 @@ export default function DepartmentPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingDepartment(null);
-    form.resetFields();
+    setFormStoreId('');
+    setFormDescription('');
   };
 
   const handleSubmit = async () => {
+    if (!formStoreId || !formDescription) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     try {
-      const values = await form.validateFields();
+      const values = { store_id: Number(formStoreId), description: formDescription };
 
       if (editingDepartment) {
-        // Update existing department
-        await updateMutation.mutateAsync({
-          id: editingDepartment.id,
-          ...values,
-        });
-        message.success('Department updated successfully');
+        await updateMutation.mutateAsync({ id: editingDepartment.id, ...values });
+        toast.success('Department updated successfully');
       } else {
-        // Create new department
         await createMutation.mutateAsync(values);
-        message.success('Department created successfully');
+        toast.success('Department created successfully');
       }
-
       handleCloseModal();
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
-        // Form validation error
-        return;
-      }
       const errorMessage = error instanceof Error ? error.message : 'Failed to save department';
-      message.error(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div>
       <DataTable<Department>
         title="Departments"
         columns={columns}
@@ -156,7 +141,7 @@ export default function DepartmentPage() {
         rowKey="id"
         pagination={{
           current: page,
-          pageSize: pageSize,
+          pageSize,
           total: departmentsData?.total || 0,
           onChange: (newPage, newPageSize) => {
             setPage(newPage);
@@ -168,72 +153,67 @@ export default function DepartmentPage() {
           value: search,
           onChange: (value) => {
             setSearch(value);
-            setPage(1); // Reset to first page on search
+            setPage(1);
           },
         }}
-        // dateFilter={{
-        //   value: dateRange,
-        //   onChange: (dates) => {
-        //     if (dates) {
-        //       setDateRange(dates);
-        //       setPage(1); // Reset to first page on date change
-        //     }
-        //   },
-        // }}
-        // actions={{
-        //   onAdd: () => handleOpenModal(),
-        //   onDelete: handleDelete,
-        //   addLabel: 'Add Department',
-        //   deleteLabel: 'Delete',
-        //   exportLabel: 'Export to Excel',
-        // }}
         exportFileName="departments"
       />
 
       {/* Add/Edit Modal */}
       <Modal
-        title={editingDepartment ? 'Edit Department' : 'Add Department'}
         open={isModalOpen}
-        onOk={handleSubmit}
-        onCancel={handleCloseModal}
-        confirmLoading={createMutation.isPending || updateMutation.isPending}
-        okText="Save"
-        cancelText="Cancel"
+        onClose={handleCloseModal}
+        title={editingDepartment ? 'Edit Department' : 'Add Department'}
+        footer={
+          <>
+            <button className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
+            <button
+              className="btn-primary"
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {(createMutation.isPending || updateMutation.isPending) ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+              ) : 'Save'}
+            </button>
+          </>
+        }
       >
-        <Form
-          form={form}
-          layout="vertical"
-          style={{ marginTop: 24 }}
-        >
-          <Form.Item
-            name="store_id"
-            label="Store ID"
-            rules={[
-              { required: true, message: 'Please input the store ID!' },
-              { type: 'number', min: 1, message: 'Store ID must be greater than 0' },
-            ]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
+        <div className="space-y-4">
+          <div>
+            <label className="label">Store ID <span className="text-red-500">*</span></label>
+            <input
+              type="number"
+              value={formStoreId}
+              onChange={(e) => setFormStoreId(e.target.value)}
+              className="input"
               placeholder="Enter store ID"
+              min={1}
             />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[
-              { required: true, message: 'Please input the description!' },
-              { max: 255, message: 'Description must be less than 255 characters' },
-            ]}
-          >
-            <Input.TextArea
-              rows={3}
+          </div>
+          <div>
+            <label className="label">Description <span className="text-red-500">*</span></label>
+            <textarea
+              value={formDescription}
+              onChange={(e) => setFormDescription(e.target.value)}
+              className="input"
               placeholder="Enter department description"
+              rows={3}
+              maxLength={255}
             />
-          </Form.Item>
-        </Form>
+          </div>
+        </div>
       </Modal>
+
+      {/* Delete Confirmation */}
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Department"
+        message={`Are you sure you want to delete "${confirmDelete?.description}" (ID: ${confirmDelete?.id})?`}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

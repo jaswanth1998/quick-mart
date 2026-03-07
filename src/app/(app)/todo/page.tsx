@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Modal, Form, Input, Select, DatePicker, Space, Tag, message } from 'antd';
-import { ExclamationCircleOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
+import { Modal, ConfirmModal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
 import {
   useTodos,
   useDeleteTodo,
@@ -14,21 +15,17 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import { getDefaultDateRange, formatDateTime, formatDate } from '@/lib/utils';
 
-const { confirm } = Modal;
-const { TextArea } = Input;
-
-// Status and Priority options
 const STATUS_OPTIONS = [
-  { label: 'Pending', value: 'pending', color: 'default' },
-  { label: 'In Progress', value: 'in_progress', color: 'processing' },
-  { label: 'Completed', value: 'completed', color: 'success' },
-  { label: 'Archived', value: 'archived', color: 'error' },
+  { label: 'Pending', value: 'pending', badge: 'badge-gray' },
+  { label: 'In Progress', value: 'in_progress', badge: 'badge-blue' },
+  { label: 'Completed', value: 'completed', badge: 'badge-green' },
+  { label: 'Archived', value: 'archived', badge: 'badge-red' },
 ];
 
 const PRIORITY_OPTIONS = [
-  { label: 'Low', value: 'low', color: 'blue' },
-  { label: 'Medium', value: 'medium', color: 'orange' },
-  { label: 'High', value: 'high', color: 'red' },
+  { label: 'Low', value: 'low', badge: 'badge-blue' },
+  { label: 'Medium', value: 'medium', badge: 'badge-orange' },
+  { label: 'High', value: 'high', badge: 'badge-red' },
 ];
 
 export default function TodoPage() {
@@ -40,19 +37,32 @@ export default function TodoPage() {
     return [dayjs(startDate), dayjs(endDate)];
   });
 
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState<string | undefined>();
-  const [priorityFilter, setPriorityFilter] = useState<string | undefined>();
-
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [form] = Form.useForm();
+  const [confirmDelete, setConfirmDelete] = useState<Todo | null>(null);
+  const toast = useToast();
 
-  // Fetch todos with filters
+  // Form state
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    status: Todo['status'];
+    priority: Todo['priority'];
+    due_date: string;
+  }>({
+    title: '',
+    description: '',
+    status: 'pending',
+    priority: 'medium',
+    due_date: '',
+  });
+
   const { data: todosData, isLoading } = useTodos({
     search,
-    status: statusFilter,
-    priority: priorityFilter,
+    status: statusFilter || undefined,
+    priority: priorityFilter || undefined,
     startDate: dateRange[0].format('YYYY-MM-DD'),
     endDate: dateRange[1].format('YYYY-MM-DD'),
     page,
@@ -63,62 +73,41 @@ export default function TodoPage() {
   const createMutation = useCreateTodo();
   const updateMutation = useUpdateTodo();
 
-  // Define table columns
   const columns: DataTableColumn<Todo>[] = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 80, sorter: (a, b) => a.id - b.id },
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-      sorter: (a, b) => a.id - b.id,
-    },
-    {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      ellipsis: true,
-      render: (title: string, record: Todo) => (
-        <a onClick={() => handleOpenModal(record)} style={{ fontWeight: 500 }}>
-          {title}
-        </a>
+      title: 'Title', dataIndex: 'title', key: 'title', ellipsis: true,
+      render: (title, record) => (
+        <button onClick={() => handleOpenModal(record)} className="text-blue-600 hover:text-blue-800 font-medium text-left">
+          {title as string}
+        </button>
       ),
     },
+    { title: 'Description', dataIndex: 'description', key: 'description', ellipsis: true },
     {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      width: 130,
-      render: (status: string) => {
-        const option = STATUS_OPTIONS.find((opt) => opt.value === status);
+      title: 'Status', dataIndex: 'status', key: 'status', width: 130,
+      render: (val) => {
+        const status = val as string;
+        const opt = STATUS_OPTIONS.find((o) => o.value === status);
         return (
-          <Tag color={option?.color} icon={status === 'completed' ? <CheckCircleOutlined /> : <ClockCircleOutlined />}>
-            {option?.label || status}
-          </Tag>
+          <span className={opt?.badge || 'badge-gray'}>
+            {status === 'completed' ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
+            {opt?.label || status}
+          </span>
         );
       },
     },
     {
-      title: 'Priority',
-      dataIndex: 'priority',
-      key: 'priority',
-      width: 100,
-      render: (priority: string) => {
-        const option = PRIORITY_OPTIONS.find((opt) => opt.value === priority);
-        return <Tag color={option?.color}>{option?.label || priority}</Tag>;
+      title: 'Priority', dataIndex: 'priority', key: 'priority', width: 100,
+      render: (val) => {
+        const priority = val as string;
+        const opt = PRIORITY_OPTIONS.find((o) => o.value === priority);
+        return <span className={opt?.badge || 'badge-gray'}>{opt?.label || priority}</span>;
       },
     },
     {
-      title: 'Due Date',
-      dataIndex: 'due_date',
-      key: 'due_date',
-      width: 120,
-      render: (date: string) => (date ? formatDate(date) : '-'),
+      title: 'Due Date', dataIndex: 'due_date', key: 'due_date', width: 120,
+      render: (date) => (date ? formatDate(date as string) : '-'),
       sorter: (a, b) => {
         if (!a.due_date) return 1;
         if (!b.due_date) return -1;
@@ -126,139 +115,92 @@ export default function TodoPage() {
       },
     },
     {
-      title: 'Created At',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 180,
-      render: (date: string) => formatDateTime(date),
+      title: 'Created At', dataIndex: 'created_at', key: 'created_at', width: 180,
+      render: (date) => formatDateTime(date as string),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
   ];
 
-  // Handle delete
-  const handleDelete = (record: Todo) => {
-    confirm({
-      title: 'Are you sure you want to delete this todo?',
-      icon: <ExclamationCircleOutlined />,
-      content: `Todo: ${record.title} (ID: ${record.id})`,
-      okText: 'Yes',
-      okType: 'danger',
-      cancelText: 'No',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync(record.id);
-          message.success('Todo deleted successfully');
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to delete todo';
-          message.error(errorMessage);
-        }
-      },
-    });
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast.success('Todo deleted successfully');
+      setConfirmDelete(null);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete todo');
+    }
   };
 
-  // Handle add/edit modal
   const handleOpenModal = (todo?: Todo) => {
     if (todo) {
       setEditingTodo(todo);
-      form.setFieldsValue({
+      setFormData({
         title: todo.title,
-        description: todo.description,
+        description: todo.description || '',
         status: todo.status,
         priority: todo.priority,
-        due_date: todo.due_date ? dayjs(todo.due_date) : null,
+        due_date: todo.due_date || '',
       });
     } else {
       setEditingTodo(null);
-      form.resetFields();
-      form.setFieldsValue({
-        status: 'pending',
-        priority: 'medium',
-      });
+      setFormData({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '' });
     }
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingTodo(null);
-    form.resetFields();
-  };
-
   const handleSubmit = async () => {
+    if (!formData.title || !formData.description) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     try {
-      const values = await form.validateFields();
-      
       const todoData = {
-        ...values,
-        due_date: values.due_date ? values.due_date.format('YYYY-MM-DD') : null,
+        title: formData.title,
+        description: formData.description,
+        status: formData.status,
+        priority: formData.priority,
+        due_date: formData.due_date || undefined,
       };
 
       if (editingTodo) {
-        await updateMutation.mutateAsync({
-          id: editingTodo.id,
-          ...todoData,
-        });
-        message.success('Todo updated successfully');
+        await updateMutation.mutateAsync({ id: editingTodo.id, ...todoData });
+        toast.success('Todo updated successfully');
       } else {
         await createMutation.mutateAsync(todoData);
-        message.success('Todo created successfully');
+        toast.success('Todo created successfully');
       }
-
-      handleCloseModal();
+      setIsModalOpen(false);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
-        return;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save todo';
-      message.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Failed to save todo');
     }
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      {/* Additional Filters */}
-      <div style={{ marginBottom: 16, padding: '16px', background: '#fafafa', borderRadius: '8px' }}>
-        <Space wrap size="middle">
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Status:</label>
-            <Select
-              style={{ width: 150 }}
-              placeholder="All Status"
-              allowClear
-              value={statusFilter}
-              onChange={(value) => {
-                setStatusFilter(value);
-                setPage(1);
-              }}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <Select.Option key={option.value} value={option.value}>
-                  {option.label}
-                </Select.Option>
+            <label className="label">Status</label>
+            <select className="select w-40" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+              <option value="">All Status</option>
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </Select>
+            </select>
           </div>
-
           <div>
-            <label style={{ marginRight: 8, fontWeight: 500 }}>Priority:</label>
-            <Select
-              style={{ width: 150 }}
-              placeholder="All Priorities"
-              allowClear
-              value={priorityFilter}
-              onChange={(value) => {
-                setPriorityFilter(value);
-                setPage(1);
-              }}
-            >
-              {PRIORITY_OPTIONS.map((option) => (
-                <Select.Option key={option.value} value={option.value}>
-                  {option.label}
-                </Select.Option>
+            <label className="label">Priority</label>
+            <select className="select w-40" value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}>
+              <option value="">All Priorities</option>
+              {PRIORITY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </Select>
+            </select>
           </div>
-        </Space>
+        </div>
       </div>
 
       <DataTable<Todo>
@@ -269,33 +211,22 @@ export default function TodoPage() {
         rowKey="id"
         pagination={{
           current: page,
-          pageSize: pageSize,
+          pageSize,
           total: todosData?.total || 0,
-          onChange: (newPage, newPageSize) => {
-            setPage(newPage);
-            setPageSize(newPageSize);
-          },
+          onChange: (newPage, newPageSize) => { setPage(newPage); setPageSize(newPageSize); },
         }}
         search={{
           placeholder: 'Search by title or description...',
           value: search,
-          onChange: (value) => {
-            setSearch(value);
-            setPage(1);
-          },
+          onChange: (value) => { setSearch(value); setPage(1); },
         }}
         dateFilter={{
           value: dateRange,
-          onChange: (dates) => {
-            if (dates) {
-              setDateRange(dates);
-              setPage(1);
-            }
-          },
+          onChange: (dates) => { if (dates) { setDateRange(dates); setPage(1); } },
         }}
         actions={{
           onAdd: () => handleOpenModal(),
-          onDelete: handleDelete,
+          onDelete: (record) => setConfirmDelete(record),
           addLabel: 'Add Todo',
           deleteLabel: 'Delete',
           exportLabel: 'Export to Excel',
@@ -305,87 +236,66 @@ export default function TodoPage() {
 
       {/* Add/Edit Modal */}
       <Modal
-        title={editingTodo ? 'Edit Todo' : 'Add Todo'}
         open={isModalOpen}
-        onOk={handleSubmit}
-        onCancel={handleCloseModal}
-        confirmLoading={createMutation.isPending || updateMutation.isPending}
-        okText="Save"
-        cancelText="Cancel"
-        width={600}
+        onClose={() => setIsModalOpen(false)}
+        title={editingTodo ? 'Edit Todo' : 'Add Todo'}
+        width="max-w-xl"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button className="btn-primary" onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save'}
+            </button>
+          </>
+        }
       >
-        <Form
-          form={form}
-          layout="vertical"
-          style={{ marginTop: 24 }}
-        >
-          <Form.Item
-            name="title"
-            label="Title"
-            rules={[
-              { required: true, message: 'Please input the title!' },
-              { max: 255, message: 'Title must be less than 255 characters' },
-            ]}
-          >
-            <Input placeholder="Enter todo title" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[
-              { required: true, message: 'Please input the description!' },
-            ]}
-          >
-            <TextArea
-              rows={4}
-              placeholder="Enter todo description"
-            />
-          </Form.Item>
-
-          <Space size="middle" style={{ width: '100%' }}>
-            <Form.Item
-              name="status"
-              label="Status"
-              rules={[{ required: true, message: 'Please select a status!' }]}
-              style={{ flex: 1, minWidth: 200 }}
-            >
-              <Select placeholder="Select status">
-                {STATUS_OPTIONS.map((option) => (
-                  <Select.Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Select.Option>
+        <div className="space-y-4">
+          <div>
+            <label className="label">Title <span className="text-red-500">*</span></label>
+            <input type="text" className="input" placeholder="Enter todo title" value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })} maxLength={255} />
+          </div>
+          <div>
+            <label className="label">Description <span className="text-red-500">*</span></label>
+            <textarea className="input" rows={4} placeholder="Enter todo description" value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Status <span className="text-red-500">*</span></label>
+              <select className="select" value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as Todo['status'] })}>
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="priority"
-              label="Priority"
-              rules={[{ required: true, message: 'Please select a priority!' }]}
-              style={{ flex: 1, minWidth: 200 }}
-            >
-              <Select placeholder="Select priority">
-                {PRIORITY_OPTIONS.map((option) => (
-                  <Select.Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Select.Option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Priority <span className="text-red-500">*</span></label>
+              <select className="select" value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value as Todo['priority'] })}>
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
-              </Select>
-            </Form.Item>
-          </Space>
-
-          <Form.Item
-            name="due_date"
-            label="Due Date"
-          >
-            <DatePicker
-              style={{ width: '100%' }}
-              format="YYYY-MM-DD"
-            />
-          </Form.Item>
-        </Form>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Due Date</label>
+            <input type="date" className="input" value={formData.due_date}
+              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })} />
+          </div>
+        </div>
       </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Todo"
+        message={`Are you sure you want to delete "${confirmDelete?.title}" (ID: ${confirmDelete?.id})?`}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

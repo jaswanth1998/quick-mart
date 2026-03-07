@@ -1,0 +1,18 @@
+{
+  "claude-code.environmentVariables": [
+    {
+      "ANTHROPIC_VERTEX_PROJECT_ID": "anetorg-jayshree",
+      "CLAUDE_CODE_USE_VERTEX": "1",
+      "CLOUD_ML_REGION": "global"
+    }
+  ],
+  "mcp": {
+    "servers": {
+      "supabase": {
+        "type": "http",
+        "url": "https://mcp.supabase.com/mcp?project_ref=btmhabrxwypiganmrjfw"
+      }
+    }
+  }
+  
+}
