@@ -3,32 +3,135 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
-import { Modal } from '@/components/ui/Modal';
+import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { useUsers, useUpdateUser, UserProfile } from '@/hooks/useUsers';
+import { useUsers, useCreateUser, useUpdateUser, useDeactivateUser, useChangePassword, UserProfile } from '@/hooks/useUsers';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { formatDateTime } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
-  const [formRole, setFormRole] = useState<'admin' | 'user'>('user');
-  const [formActive, setFormActive] = useState(true);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<UserProfile | null>(null);
+  const [passwordUser, setPasswordUser] = useState<UserProfile | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    username: '',
+    role: 'user' as 'admin' | 'user',
+    is_active: true,
+  });
   const toast = useToast();
-  const router = useRouter();
-  const { isAdmin, isLoading: roleLoading } = useUserRole();
-
+  const { profile } = useUserRole();
+  const { isLoading: adminLoading } = useRequireAdmin();
   const { data: usersData, isLoading } = useUsers({ search, page, pageSize });
+  const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
+  const deactivateMutation = useDeactivateUser();
+  const changePasswordMutation = useChangePassword();
 
-  // Redirect non-admins
-  if (!roleLoading && !isAdmin) {
-    router.push('/dashboard');
-    return null;
-  }
+  if (adminLoading) return null;
+
+  const handleOpenModal = (user?: UserProfile) => {
+    if (user) {
+      setEditingUser(user);
+      setFormData({
+        email: user.email,
+        password: '',
+        username: user.username || '',
+        role: user.role,
+        is_active: user.is_active,
+      });
+    } else {
+      setEditingUser(null);
+      setFormData({
+        email: '',
+        password: '',
+        username: '',
+        role: 'user',
+        is_active: true,
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.email) {
+      toast.error('Email is required');
+      return;
+    }
+
+    try {
+      if (editingUser) {
+        await updateMutation.mutateAsync({
+          id: editingUser.id,
+          username: formData.username,
+          role: formData.role,
+          is_active: formData.is_active,
+        });
+        toast.success('User updated successfully');
+      } else {
+        if (!formData.password || formData.password.length < 6) {
+          toast.error('Password must be at least 6 characters');
+          return;
+        }
+        if (!formData.username) {
+          toast.error('Username is required');
+          return;
+        }
+        await createMutation.mutateAsync({
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+          role: formData.role,
+        });
+        toast.success('User created successfully');
+      }
+      handleCloseModal();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save user');
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!confirmDeactivate) return;
+    try {
+      await deactivateMutation.mutateAsync(confirmDeactivate.id);
+      toast.success('User deactivated successfully');
+      setConfirmDeactivate(null);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to deactivate user');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordUser) return;
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      await changePasswordMutation.mutateAsync({
+        userId: passwordUser.id,
+        newPassword,
+      });
+      toast.success('Password changed successfully');
+      setPasswordUser(null);
+      setNewPassword('');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to change password');
+    }
+  };
 
   const columns: DataTableColumn<UserProfile>[] = [
     {
@@ -81,44 +184,34 @@ export default function UsersPage() {
       title: 'Actions',
       dataIndex: 'id',
       key: 'actions',
-      width: 100,
+      width: 220,
       exportable: false,
       render: (_, record) => (
-        <button
-          onClick={() => handleOpenEdit(record)}
-          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-        >
-          Edit
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleOpenModal(record)}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => { setPasswordUser(record); setNewPassword(''); }}
+            className="text-xs text-amber-600 hover:text-amber-800 font-medium"
+          >
+            Password
+          </button>
+          {record.is_active && record.id !== profile?.id && (
+            <button
+              onClick={() => setConfirmDeactivate(record)}
+              className="text-xs text-red-600 hover:text-red-800 font-medium"
+            >
+              Deactivate
+            </button>
+          )}
+        </div>
       ),
     },
   ];
-
-  const handleOpenEdit = (user: UserProfile) => {
-    setEditingUser(user);
-    setFormRole(user.role);
-    setFormActive(user.is_active);
-  };
-
-  const handleCloseEdit = () => {
-    setEditingUser(null);
-  };
-
-  const handleSave = async () => {
-    if (!editingUser) return;
-    try {
-      await updateMutation.mutateAsync({
-        id: editingUser.id,
-        role: formRole,
-        is_active: formActive,
-      });
-      toast.success('User updated successfully');
-      handleCloseEdit();
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update user';
-      toast.error(errorMessage);
-    }
-  };
 
   return (
     <div>
@@ -145,23 +238,27 @@ export default function UsersPage() {
             setPage(1);
           },
         }}
+        actions={{
+          onAdd: () => handleOpenModal(),
+          addLabel: 'Add User',
+        }}
         exportFileName="users"
       />
 
-      {/* Edit User Modal */}
+      {/* Create / Edit User Modal */}
       <Modal
-        open={!!editingUser}
-        onClose={handleCloseEdit}
-        title="Edit User"
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        title={editingUser ? 'Edit User' : 'Add User'}
         footer={
           <>
-            <button className="btn-secondary" onClick={handleCloseEdit}>Cancel</button>
+            <button className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
             <button
               className="btn-primary"
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {updateMutation.isPending ? (
+              {(createMutation.isPending || updateMutation.isPending) ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
               ) : 'Save'}
             </button>
@@ -170,63 +267,138 @@ export default function UsersPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="label">Email</label>
+            <label className="label">Email <span className="text-red-500">*</span></label>
             <input
-              type="text"
-              value={editingUser?.email || ''}
-              className="input bg-gray-50"
-              disabled
+              type="email"
+              className={`input ${editingUser ? 'bg-gray-50' : ''}`}
+              placeholder="Enter email address"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              disabled={!!editingUser}
             />
           </div>
+
+          {!editingUser && (
+            <div>
+              <label className="label">Password <span className="text-red-500">*</span></label>
+              <input
+                type="password"
+                className="input"
+                placeholder="Minimum 6 characters"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+          )}
+
           <div>
-            <label className="label">Username</label>
+            <label className="label">Username {!editingUser && <span className="text-red-500">*</span>}</label>
             <input
               type="text"
-              value={editingUser?.username || ''}
-              className="input bg-gray-50"
-              disabled
+              className="input"
+              placeholder="Enter username"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             />
           </div>
+
           <div>
             <label className="label">Role</label>
             <select
-              value={formRole}
-              onChange={(e) => setFormRole(e.target.value as 'admin' | 'user')}
               className="select"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </div>
-          <div>
-            <label className="label">Status</label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setFormActive(true)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  formActive
-                    ? 'bg-green-50 border-green-300 text-green-700'
-                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Active
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormActive(false)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  !formActive
-                    ? 'bg-red-50 border-red-300 text-red-700'
-                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Inactive
-              </button>
+
+          {editingUser && (
+            <div>
+              <label className="label">Status</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, is_active: true })}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    formData.is_active
+                      ? 'bg-green-50 border-green-300 text-green-700'
+                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  Active
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, is_active: false })}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    !formData.is_active
+                      ? 'bg-red-50 border-red-300 text-red-700'
+                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  Inactive
+                </button>
+              </div>
             </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Change Password Modal */}
+      <Modal
+        open={!!passwordUser}
+        onClose={() => { setPasswordUser(null); setNewPassword(''); }}
+        title="Change Password"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => { setPasswordUser(null); setNewPassword(''); }}>Cancel</button>
+            <button
+              className="btn-primary"
+              onClick={handleChangePassword}
+              disabled={changePasswordMutation.isPending}
+            >
+              {changePasswordMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+              ) : 'Change Password'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label">User</label>
+            <input
+              type="text"
+              className="input bg-gray-50"
+              value={passwordUser?.email || ''}
+              disabled
+            />
+          </div>
+          <div>
+            <label className="label">New Password <span className="text-red-500">*</span></label>
+            <input
+              type="password"
+              className="input"
+              placeholder="Minimum 6 characters"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
           </div>
         </div>
       </Modal>
+
+      {/* Deactivate Confirmation Modal */}
+      <ConfirmModal
+        open={!!confirmDeactivate}
+        onClose={() => setConfirmDeactivate(null)}
+        onConfirm={handleDeactivate}
+        title="Deactivate User"
+        message={`Are you sure you want to deactivate "${confirmDeactivate?.email}"? They will no longer be able to log in.`}
+        confirmText="Deactivate"
+        loading={deactivateMutation.isPending}
+      />
     </div>
   );
 }

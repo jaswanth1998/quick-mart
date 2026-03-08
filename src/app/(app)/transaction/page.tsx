@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ShoppingCart, Car, DollarSign, Trophy, Wallet } from 'lucide-react';
+import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 import { useTransactions, Transaction } from '@/hooks/useTransactions';
 import dayjs, { Dayjs } from 'dayjs';
@@ -18,6 +19,7 @@ const tabs: { key: TabKey; label: string; icon: typeof ShoppingCart }[] = [
 ];
 
 export default function TransactionPage() {
+  const { isLoading: adminLoading } = useRequireAdmin();
   const [activeTab, setActiveTab] = useState<TabKey>('merchandise');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -38,6 +40,8 @@ export default function TransactionPage() {
     page,
     pageSize,
   });
+
+  if (adminLoading) return null;
 
   const commonColumns: DataTableColumn<Transaction>[] = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80, sorter: (a, b) => a.id - b.id },

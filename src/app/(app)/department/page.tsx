@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
@@ -16,6 +17,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { getDefaultDateRange, formatDateTime } from '@/lib/utils';
 
 export default function DepartmentPage() {
+  const { isLoading: adminLoading } = useRequireAdmin();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -44,6 +46,8 @@ export default function DepartmentPage() {
   const deleteMutation = useDeleteDepartment();
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
+
+  if (adminLoading) return null;
 
   const columns: DataTableColumn<Department>[] = [
     {

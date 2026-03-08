@@ -95,3 +95,52 @@
     @apply badge bg-gray-100 text-gray-800;
   }
 }
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  aside,
+  header,
+  .step-indicator,
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-ghost,
+  nav,
+  button {
+    display: none !important;
+  }
+
+  .print-section {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-section * {
+    visibility: visible;
+  }
+
+  .print-section .card {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .print-section table {
+    width: 100% !important;
+    font-size: 12px !important;
+  }
+
+  .print-section .print-show {
+    display: block !important;
+  }
+
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+}

@@ -13,6 +13,9 @@ import {
   ChevronLeft,
   Fuel,
   Users,
+  ClipboardList,
+  ClipboardCheck,
+  Coins,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -30,6 +33,9 @@ const allNavItems = [
   { path: '/product', label: 'Products', icon: ShoppingCart, resource: 'product' },
   { path: '/transaction', label: 'Transactions', icon: DollarSign, resource: 'transaction' },
   { path: '/upload', label: 'Upload Files', icon: Upload, resource: 'upload' },
+  { path: '/shift-report', label: 'Shift Reports', icon: ClipboardList, resource: 'shift_report' },
+  { path: '/cash-counting', label: 'Cash Counting', icon: Coins, resource: 'cash_counting' },
+  { path: '/daily-tasks', label: 'Daily Tasks', icon: ClipboardCheck, resource: 'daily_tasks' },
   { path: '/todo', label: 'Todos', icon: CheckSquare, resource: 'todo' },
   { path: '/users', label: 'Users', icon: Users, resource: 'users' },
 ];
@@ -109,7 +115,7 @@ export function AppLayout({ children, role, username }: AppLayoutProps) {
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = pathname === item.path;
+            const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
             return (
               <button
                 key={item.path}

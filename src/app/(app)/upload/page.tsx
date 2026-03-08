@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, CheckCircle, XCircle, Loader2, Trash2, Clock, Info } from 'lucide-react';
+import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
 
@@ -49,6 +50,7 @@ const tabConfig: { key: TabKey; label: string; description: string; hint: string
 ];
 
 export default function UploadPage() {
+  const { isLoading: adminLoading } = useRequireAdmin();
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('departments');
@@ -308,6 +310,8 @@ export default function UploadPage() {
     const hasPendingFiles = fileQueue.some(f => f.status === 'pending');
     if (hasPendingFiles && !isProcessingRef.current) processQueue();
   }, [fileQueue, processQueue]);
+
+  if (adminLoading) return null;
 
   const addFilesToQueue = (files: File[], fileType: string) => {
     const newQueuedFiles: QueuedFile[] = files.map(file => ({

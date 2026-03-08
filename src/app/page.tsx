@@ -37,7 +37,7 @@ export default function AuthPage() {
           .eq('id', data.user.id)
           .single();
 
-        const targetRoute = profile?.role === 'admin' ? '/dashboard' : '/dashboard';
+        const targetRoute = profile?.role === 'admin' ? '/dashboard' : '/todo';
         router.push(targetRoute);
         router.refresh();
       }

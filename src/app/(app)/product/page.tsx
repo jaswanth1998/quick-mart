@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Pencil, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
@@ -18,6 +19,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { getDefaultDateRange, formatDateTime } from '@/lib/utils';
 
 export default function ProductPage() {
+  const { isLoading: adminLoading } = useRequireAdmin();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -68,6 +70,8 @@ export default function ProductPage() {
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const updateStockMutation = useUpdateProductStock();
+
+  if (adminLoading) return null;
 
   const columns: DataTableColumn<Product>[] = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80, sorter: (a, b) => a.id - b.id },
