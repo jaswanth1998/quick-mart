@@ -54,7 +54,7 @@ export default function RecentReportsTable({ reports }: Props) {
               reports.map((report) => (
                 <tr
                   key={report.id}
-                  onClick={() => router.push(`/shift-report/${report.id}`)}
+                  onClick={() => router.push(`/shift-report/view?id=${report.id}`)}
                   className="hover:bg-gray-50/50 cursor-pointer"
                 >
                   <td className="px-4 py-3 text-sm text-gray-900">

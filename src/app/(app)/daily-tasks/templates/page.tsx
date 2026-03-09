@@ -25,7 +25,7 @@ const defaultFormData = {
   description: '',
   day_of_week: 1,
   shift_type: 'morning' as string,
-  store_location: 'Store 1' as string,
+  store_location: '4403 Kingston' as string,
   sort_order: 0,
   is_active: true,
 };

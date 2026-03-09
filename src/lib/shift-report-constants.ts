@@ -1,4 +1,4 @@
-export const STORE_LOCATIONS = ['Store 1', 'Store 2', 'Store 3'] as const;
+export const STORE_LOCATIONS = ['4403 Kingston', 'Store 2', 'Store 3'] as const;
 
 export const SHIFT_TYPES = ['7-3', '3-11', '11-7'] as const;
 

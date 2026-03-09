@@ -21,7 +21,7 @@ export default function ShiftTimeline({ shifts }: Props) {
 
   const handleClick = (shift: ShiftStatus) => {
     if (shift.reportId) {
-      router.push(`/shift-report/${shift.reportId}`);
+      router.push(`/shift-report/view?id=${shift.reportId}`);
     } else {
       router.push('/shift-report/new/value-stock');
     }

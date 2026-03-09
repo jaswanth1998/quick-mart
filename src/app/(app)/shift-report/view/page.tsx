@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useShiftReport } from '@/hooks/useShiftReports';
 import {
   ShiftReportFormProvider,
@@ -98,10 +98,10 @@ function ReportContent({ report }: { report: ShiftReportWithEntries }) {
   );
 }
 
-export default function ShiftReportDetailPage() {
-  const params = useParams();
+function ShiftReportDetailInner() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const id = params?.id ? Number(params.id) : null;
+  const id = searchParams.get('id') ? Number(searchParams.get('id')) : null;
 
   const { data: report, isLoading, isError } = useShiftReport(id);
 
@@ -135,5 +135,20 @@ export default function ShiftReportDetailPage() {
     <ShiftReportFormProvider>
       <ReportContent report={report} />
     </ShiftReportFormProvider>
+  );
+}
+
+export default function ShiftReportDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <span className="text-sm text-gray-500">Loading report...</span>
+        </div>
+      }
+    >
+      <ShiftReportDetailInner />
+    </Suspense>
   );
 }

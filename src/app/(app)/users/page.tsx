@@ -23,6 +23,7 @@ export default function UsersPage() {
     email: '',
     password: '',
     username: '',
+    phone: '',
     role: 'user' as 'admin' | 'user',
     is_active: true,
   });
@@ -44,6 +45,7 @@ export default function UsersPage() {
         email: user.email,
         password: '',
         username: user.username || '',
+        phone: user.phone || '',
         role: user.role,
         is_active: user.is_active,
       });
@@ -53,6 +55,7 @@ export default function UsersPage() {
         email: '',
         password: '',
         username: '',
+        phone: '',
         role: 'user',
         is_active: true,
       });
@@ -76,6 +79,7 @@ export default function UsersPage() {
         await updateMutation.mutateAsync({
           id: editingUser.id,
           username: formData.username,
+          phone: formData.phone || null,
           role: formData.role,
           is_active: formData.is_active,
         });
@@ -93,6 +97,7 @@ export default function UsersPage() {
           email: formData.email,
           password: formData.password,
           username: formData.username,
+          phone: formData.phone || undefined,
           role: formData.role,
         });
         toast.success('User created successfully');
@@ -144,6 +149,12 @@ export default function UsersPage() {
       title: 'Username',
       dataIndex: 'username',
       key: 'username',
+      render: (value) => (value as string) || '-',
+    },
+    {
+      title: 'Phone',
+      dataIndex: 'phone',
+      key: 'phone',
       render: (value) => (value as string) || '-',
     },
     {
@@ -231,7 +242,7 @@ export default function UsersPage() {
           },
         }}
         search={{
-          placeholder: 'Search by email or username...',
+          placeholder: 'Search by email, username, or phone...',
           value: search,
           onChange: (value) => {
             setSearch(value);
@@ -299,6 +310,17 @@ export default function UsersPage() {
               placeholder="Enter username"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="label">Phone Number</label>
+            <input
+              type="tel"
+              className="input"
+              placeholder="Enter phone number (optional)"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
 

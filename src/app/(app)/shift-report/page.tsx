@@ -98,7 +98,7 @@ export default function ShiftReportPage() {
       render: (_, record) => (
         <div className="flex items-center gap-1">
           <button
-            onClick={() => router.push(`/shift-report/${record.id}`)}
+            onClick={() => router.push(`/shift-report/view?id=${record.id}`)}
             className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
             title="View"
           >
@@ -107,7 +107,7 @@ export default function ShiftReportPage() {
           </button>
           {record.status === 'draft' && (
             <button
-              onClick={() => router.push(`/shift-report/${record.id}`)}
+              onClick={() => router.push(`/shift-report/view?id=${record.id}`)}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
               title="Edit"
             >

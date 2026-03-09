@@ -125,7 +125,7 @@ const initialState: ShiftReportFormState = {
   reportDate: new Date().toISOString().split('T')[0],
   shiftType: '7-3',
   shiftIncharge: '',
-  storeLocation: '',
+  storeLocation: '4403 Kingston',
   status: 'draft',
   valueStockEntries: buildInitialValueStockEntries(),
   drawerStockEntries: buildInitialDrawerStockEntries(),

@@ -105,7 +105,7 @@ export default function StockAlertsCard({ alerts }: Props) {
                   {alerts.valueStockMismatches.map((m, i) => (
                     <Link
                       key={i}
-                      href={`/shift-report/${m.reportId}`}
+                      href={`/shift-report/view?id=${m.reportId}`}
                       className="flex items-center justify-between text-xs bg-amber-50 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
                     >
                       <span className="text-gray-700">
@@ -144,7 +144,7 @@ export default function StockAlertsCard({ alerts }: Props) {
                   {alerts.drawerStockMismatches.map((m, i) => (
                     <Link
                       key={i}
-                      href={`/shift-report/${m.reportId}`}
+                      href={`/shift-report/view?id=${m.reportId}`}
                       className="flex items-center justify-between text-xs bg-amber-50 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
                     >
                       <span className="text-gray-700 truncate mr-2">

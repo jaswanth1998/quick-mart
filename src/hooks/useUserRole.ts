@@ -5,6 +5,7 @@ export type UserProfile = {
   id: string;
   email: string;
   username: string | null;
+  phone: string | null;
   role: 'admin' | 'user';
   is_active: boolean;
 };

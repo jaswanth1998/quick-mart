@@ -62,7 +62,6 @@ export function AppLayout({ children, role, username }: AppLayoutProps) {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
-    router.refresh();
   };
 
   const handleNav = (path: string) => {

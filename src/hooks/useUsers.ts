@@ -6,6 +6,7 @@ export type UserProfile = {
   id: string;
   email: string;
   username: string | null;
+  phone: string | null;
   role: 'admin' | 'user';
   is_active: boolean;
   created_at: string;
@@ -29,7 +30,7 @@ export function useUsers({ search = '', page = 1, pageSize = 10 }: UseUsersParam
         .select('*', { count: 'exact' });
 
       if (search) {
-        query = query.or(`email.ilike.%${search}%,username.ilike.%${search}%`);
+        query = query.or(`email.ilike.%${search}%,username.ilike.%${search}%,phone.ilike.%${search}%`);
       }
 
       query = query
@@ -48,7 +49,7 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { email: string; password: string; username: string; role: 'admin' | 'user' }) => {
+    mutationFn: async (data: { email: string; password: string; username: string; role: 'admin' | 'user'; phone?: string }) => {
       const result = await createUserAction(data);
       if (result.error) {
         throw new Error(result.error);
@@ -71,16 +72,19 @@ export function useUpdateUser() {
       role,
       is_active,
       username,
+      phone,
     }: {
       id: string;
       role?: 'admin' | 'user';
       is_active?: boolean;
       username?: string;
+      phone?: string | null;
     }) => {
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (role !== undefined) updates.role = role;
       if (is_active !== undefined) updates.is_active = is_active;
       if (username !== undefined) updates.username = username;
+      if (phone !== undefined) updates.phone = phone;
 
       const { error } = await supabase
         .from('user_profiles')

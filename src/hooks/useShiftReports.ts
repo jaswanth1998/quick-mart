@@ -408,7 +408,8 @@ export const usePreviousShiftClosing = (
       const prevShift = getPreviousShift(shiftType!);
 
       // Find the most recent submitted report for the previous shift
-      const { data: prevReport, error: reportError } = await supabase
+      // First try matching the exact store location
+      const { data: storeMatch } = await supabase
         .from('shift_reports')
         .select('*')
         .eq('status', 'submitted')
@@ -417,9 +418,55 @@ export const usePreviousShiftClosing = (
         .lte('report_date', reportDate!)
         .order('report_date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (reportError || !prevReport) {
+      let prevReport = storeMatch;
+
+      // Fallback: find any previous shift report (handles legacy reports without store_location)
+      if (!prevReport) {
+        const { data: fallbackMatch } = await supabase
+          .from('shift_reports')
+          .select('*')
+          .eq('status', 'submitted')
+          .eq('shift_type', prevShift.shiftType)
+          .lte('report_date', reportDate!)
+          .order('report_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        prevReport = fallbackMatch;
+      }
+
+      // Fallback: most recent submitted report of ANY shift type at same store
+      if (!prevReport) {
+        const { data: anyShiftMatch } = await supabase
+          .from('shift_reports')
+          .select('*')
+          .eq('status', 'submitted')
+          .eq('store_location', storeLocation!)
+          .lte('report_date', reportDate!)
+          .order('report_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        prevReport = anyShiftMatch;
+      }
+
+      // Last resort: most recent submitted report regardless of shift type or store
+      if (!prevReport) {
+        const { data: anyMatch } = await supabase
+          .from('shift_reports')
+          .select('*')
+          .eq('status', 'submitted')
+          .lte('report_date', reportDate!)
+          .order('report_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        prevReport = anyMatch;
+      }
+
+      if (!prevReport) {
         return null;
       }
 

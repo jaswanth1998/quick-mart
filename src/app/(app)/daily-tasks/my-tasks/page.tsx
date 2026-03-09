@@ -24,7 +24,7 @@ export default function MyTasksPage() {
   const todayDate = today.format('YYYY-MM-DD');
 
   const [shiftType, setShiftType] = useState<string>('morning');
-  const [storeLocation, setStoreLocation] = useState<string>('Store 1');
+  const [storeLocation, setStoreLocation] = useState<string>('4403 Kingston');
   const [completingTemplate, setCompletingTemplate] = useState<TaskTemplate | null>(null);
   const [resubmitCompletion, setResubmitCompletion] = useState<TaskCompletion | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
