@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useCashCountingEntries, useCashCountingAnalytics, useDeleteCashCountingEntry } from '@/hooks/useCashCounting';
+import { useUserRole } from '@/hooks/useUserRole';
 import CashCountingHeader from '@/components/cash-counting/CashCountingHeader';
 import CashCountingKPICards from '@/components/cash-counting/CashCountingKPICards';
 import CashCountingCharts from '@/components/cash-counting/CashCountingCharts';
@@ -16,6 +18,7 @@ import { useToast } from '@/components/ui/Toast';
 import type { CashCountingEntry } from '@/lib/cash-counting-utils';
 
 export default function CashCountingPage() {
+  const { isAdmin, isLoading: authLoading } = useUserRole();
   const toast = useToast();
   const deleteMutation = useDeleteCashCountingEntry();
 
@@ -42,15 +45,18 @@ export default function CashCountingPage() {
     startDate: filters.startDate,
     endDate: filters.endDate,
     page: 1,
-    pageSize: 1000, // Fetch all for analytics
+    pageSize: isAdmin ? 1000 : 10,
   });
 
-  const { data: analytics } = useCashCountingAnalytics({
-    startDate: filters.startDate,
-    endDate: filters.endDate,
-    shiftType: filters.shiftType,
-    storeLocation: filters.storeLocation,
-  });
+  const { data: analytics } = useCashCountingAnalytics(
+    {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      shiftType: filters.shiftType,
+      storeLocation: filters.storeLocation,
+    },
+    { enabled: isAdmin }
+  );
 
   const entries = entriesData?.data || [];
 
@@ -88,6 +94,14 @@ export default function CashCountingPage() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with Filters */}
@@ -98,18 +112,20 @@ export default function CashCountingPage() {
         entries={entries}
       />
 
-      {/* KPI Cards */}
-      <CashCountingKPICards entries={entries} />
+      {/* KPI Cards - Admin only */}
+      {isAdmin && <CashCountingKPICards entries={entries} />}
 
-      {/* Charts and Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <CashCountingCharts analytics={analytics} />
+      {/* Charts and Breakdown - Admin only */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <CashCountingCharts analytics={analytics} />
+          </div>
+          <div>
+            <DenominationBreakdownPanel entries={entries} />
+          </div>
         </div>
-        <div>
-          <DenominationBreakdownPanel entries={entries} />
-        </div>
-      </div>
+      )}
 
       {/* Shift Analysis Table */}
       <ShiftAnalysisTable
@@ -119,11 +135,13 @@ export default function CashCountingPage() {
         onDelete={handleDelete}
       />
 
-      {/* Insights and Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <CashCountingInsights entries={entries} />
-        <CashCountingAlerts entries={entries} />
-      </div>
+      {/* Insights and Alerts - Admin only */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <CashCountingInsights entries={entries} />
+          <CashCountingAlerts entries={entries} />
+        </div>
+      )}
 
       {/* Modals */}
       <CashCountingEntryModal

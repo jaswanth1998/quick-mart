@@ -122,11 +122,15 @@ export const useCashCountingEntries = (filters: CashCountingFilters = {}) => {
 /**
  * Fetch all entries in date range for analytics
  */
-export const useCashCountingAnalytics = (filters: Pick<CashCountingFilters, 'startDate' | 'endDate' | 'shiftType' | 'storeLocation'> = {}) => {
+export const useCashCountingAnalytics = (
+  filters: Pick<CashCountingFilters, 'startDate' | 'endDate' | 'shiftType' | 'storeLocation'> = {},
+  options: { enabled?: boolean } = {}
+) => {
   const { startDate, endDate, shiftType, storeLocation } = filters;
 
   return useQuery({
     queryKey: ['cash-counting-analytics', { startDate, endDate, shiftType, storeLocation }],
+    enabled: options.enabled !== false,
     queryFn: async (): Promise<CashCountingAnalytics> => {
       const supabase = createClient();
 
