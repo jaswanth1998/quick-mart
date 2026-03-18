@@ -16,6 +16,9 @@ import {
   ClipboardList,
   ClipboardCheck,
   Coins,
+  PackagePlus,
+  PackageMinus,
+  ShieldCheck,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -34,6 +37,9 @@ const allNavItems = [
   { path: '/transaction', label: 'Transactions', icon: DollarSign, resource: 'transaction' },
   { path: '/upload', label: 'Upload Files', icon: Upload, resource: 'upload' },
   { path: '/shift-report', label: 'Shift Reports', icon: ClipboardList, resource: 'shift_report' },
+  { path: '/added-stock', label: 'Added Stock', icon: PackagePlus, resource: 'added_stock' },
+  { path: '/subtracted-stock', label: 'Subtract Stock', icon: PackageMinus, resource: 'subtracted_stock' },
+  { path: '/stock-verification', label: 'Stock Verification', icon: ShieldCheck, resource: 'verification' },
   { path: '/cash-counting', label: 'Cash Counting', icon: Coins, resource: 'cash_counting' },
   { path: '/daily-tasks', label: 'Daily Tasks', icon: ClipboardCheck, resource: 'daily_tasks' },
   { path: '/todo', label: 'Todos', icon: CheckSquare, resource: 'todo' },

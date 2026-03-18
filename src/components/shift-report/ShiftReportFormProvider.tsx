@@ -12,6 +12,7 @@ export interface ValueStockEntryState {
   sort_order: number;
   start_count: number;
   added: number;
+  subtracted: number;
   sold: number;
   end_count: number;
   end_count_override: number | null;
@@ -24,6 +25,7 @@ export interface DrawerStockEntryState {
   sort_order: number;
   opening: number;
   addition: number;
+  subtraction: number;
   sold: number;
   closing: number;
   closing_override: number | null;
@@ -57,10 +59,14 @@ export interface ShiftReportFormState {
 
 export type ShiftReportAction =
   | { type: 'SET_HEADER'; payload: Partial<Pick<ShiftReportFormState, 'reportDate' | 'shiftType' | 'shiftIncharge' | 'storeLocation'>> }
-  | { type: 'SET_VALUE_STOCK_ENTRY'; payload: { index: number; field: 'added' | 'sold' | 'end_count_override'; value: number | null } }
+  | { type: 'SET_VALUE_STOCK_ENTRY'; payload: { index: number; field: 'sold' | 'end_count_override'; value: number | null } }
   | { type: 'SET_VALUE_STOCK_START_COUNTS'; payload: Record<string, number> }
-  | { type: 'SET_DRAWER_STOCK_ENTRY'; payload: { index: number; field: 'addition' | 'sold' | 'closing_override'; value: number | null } }
+  | { type: 'SET_VALUE_STOCK_ADDED'; payload: Record<string, number> }
+  | { type: 'SET_VALUE_STOCK_SUBTRACTED'; payload: Record<string, number> }
+  | { type: 'SET_DRAWER_STOCK_ENTRY'; payload: { index: number; field: 'sold' | 'closing_override'; value: number | null } }
   | { type: 'SET_DRAWER_STOCK_OPENINGS'; payload: Record<string, number> }
+  | { type: 'SET_DRAWER_STOCK_ADDED'; payload: Record<string, number> }
+  | { type: 'SET_DRAWER_STOCK_SUBTRACTED'; payload: Record<string, number> }
   | { type: 'SET_SUMMARY_FIELD'; payload: { field: 'totalDSales' | 'totalDPayout' | 'shiftSales' | 'shiftPayout' | 'activated'; value: number } }
   | { type: 'SET_VALUE_NOTES'; payload: string }
   | { type: 'SET_DRAWER_NOTES'; payload: string }
@@ -81,6 +87,7 @@ function buildInitialValueStockEntries(): ValueStockEntryState[] {
     sort_order: row.sortOrder,
     start_count: 0,
     added: 0,
+    subtracted: 0,
     sold: 0,
     end_count: 0,
     end_count_override: null,
@@ -95,6 +102,7 @@ function buildInitialDrawerStockEntries(): DrawerStockEntryState[] {
     sort_order: row.drawer,
     opening: 0,
     addition: 0,
+    subtraction: 0,
     sold: 0,
     closing: 0,
     closing_override: null,
@@ -103,14 +111,14 @@ function buildInitialDrawerStockEntries(): DrawerStockEntryState[] {
 }
 
 function recalcValueEntry(entry: ValueStockEntryState): ValueStockEntryState {
-  const end_count = entry.start_count + entry.added - entry.sold;
+  const end_count = entry.start_count + entry.added - entry.subtracted - entry.sold;
   const has_mismatch =
     entry.end_count_override !== null && entry.end_count_override !== end_count;
   return { ...entry, end_count, has_mismatch };
 }
 
 function recalcDrawerEntry(entry: DrawerStockEntryState): DrawerStockEntryState {
-  const closing = entry.opening + entry.addition - entry.sold;
+  const closing = entry.opening + entry.addition - entry.subtraction - entry.sold;
   const has_mismatch =
     entry.closing_override !== null && entry.closing_override !== closing;
   return { ...entry, closing, has_mismatch };
@@ -164,10 +172,25 @@ function reducer(state: ShiftReportFormState, action: ShiftReportAction): ShiftR
       const entries = state.valueStockEntries.map((entry) => {
         const count = action.payload[entry.amount_label];
         if (count === undefined) return entry;
-        const updated = { ...entry, start_count: count };
-        return recalcValueEntry(updated);
+        return recalcValueEntry({ ...entry, start_count: count });
       });
       return { ...state, valueStockEntries: entries, isDirty: true };
+    }
+
+    case 'SET_VALUE_STOCK_ADDED': {
+      const entries = state.valueStockEntries.map((entry) => {
+        const added = action.payload[entry.amount_label] ?? 0;
+        return recalcValueEntry({ ...entry, added });
+      });
+      return { ...state, valueStockEntries: entries };
+    }
+
+    case 'SET_VALUE_STOCK_SUBTRACTED': {
+      const entries = state.valueStockEntries.map((entry) => {
+        const subtracted = action.payload[entry.amount_label] ?? 0;
+        return recalcValueEntry({ ...entry, subtracted });
+      });
+      return { ...state, valueStockEntries: entries };
     }
 
     case 'SET_DRAWER_STOCK_ENTRY': {
@@ -184,10 +207,25 @@ function reducer(state: ShiftReportFormState, action: ShiftReportAction): ShiftR
       const entries = state.drawerStockEntries.map((entry) => {
         const count = action.payload[entry.contents];
         if (count === undefined) return entry;
-        const updated = { ...entry, opening: count };
-        return recalcDrawerEntry(updated);
+        return recalcDrawerEntry({ ...entry, opening: count });
       });
       return { ...state, drawerStockEntries: entries, isDirty: true };
+    }
+
+    case 'SET_DRAWER_STOCK_ADDED': {
+      const entries = state.drawerStockEntries.map((entry) => {
+        const addition = action.payload[entry.contents] ?? 0;
+        return recalcDrawerEntry({ ...entry, addition });
+      });
+      return { ...state, drawerStockEntries: entries };
+    }
+
+    case 'SET_DRAWER_STOCK_SUBTRACTED': {
+      const entries = state.drawerStockEntries.map((entry) => {
+        const subtraction = action.payload[entry.contents] ?? 0;
+        return recalcDrawerEntry({ ...entry, subtraction });
+      });
+      return { ...state, drawerStockEntries: entries };
     }
 
     case 'SET_SUMMARY_FIELD':

@@ -8,6 +8,8 @@ import ValueStockSummary from '@/components/shift-report/ValueStockSummary';
 import { useShiftReportForm } from '@/components/shift-report/ShiftReportFormProvider';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateShiftReport, useUpdateShiftReport, useSaveValueStockEntries, usePreviousShiftClosing } from '@/hooks/useShiftReports';
+import { useStockAdditionsForShift } from '@/hooks/useStockAdditions';
+import { useStockSubtractionsForShift } from '@/hooks/useStockSubtractions';
 import { createClient } from '@/lib/supabase/client';
 import { ChevronRight } from 'lucide-react';
 
@@ -27,6 +29,18 @@ export default function ValueStockPage() {
     state.storeLocation
   );
 
+  const { data: additionsData } = useStockAdditionsForShift(
+    state.reportDate,
+    state.shiftType,
+    state.storeLocation
+  );
+
+  const { data: subtractionsData } = useStockSubtractionsForShift(
+    state.reportDate,
+    state.shiftType,
+    state.storeLocation
+  );
+
   // Set current step on mount
   useEffect(() => {
     dispatch({ type: 'SET_STEP', payload: 1 });
@@ -38,6 +52,20 @@ export default function ValueStockPage() {
       dispatch({ type: 'SET_VALUE_STOCK_START_COUNTS', payload: previousClosing.valueStockClosing });
     }
   }, [previousClosing, dispatch]);
+
+  // When additions data loads, set value stock added values
+  useEffect(() => {
+    if (additionsData?.valueAdded) {
+      dispatch({ type: 'SET_VALUE_STOCK_ADDED', payload: additionsData.valueAdded });
+    }
+  }, [additionsData, dispatch]);
+
+  // When subtractions data loads, set value stock subtracted values
+  useEffect(() => {
+    if (subtractionsData?.valueSubtracted) {
+      dispatch({ type: 'SET_VALUE_STOCK_SUBTRACTED', payload: subtractionsData.valueSubtracted });
+    }
+  }, [subtractionsData, dispatch]);
 
   const handleSaveDraft = async () => {
     try {

@@ -7,6 +7,8 @@ import DrawerStockTable from '@/components/shift-report/DrawerStockTable';
 import { useShiftReportForm } from '@/components/shift-report/ShiftReportFormProvider';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateShiftReport, useUpdateShiftReport, useSaveDrawerStockEntries, usePreviousShiftClosing } from '@/hooks/useShiftReports';
+import { useStockAdditionsForShift } from '@/hooks/useStockAdditions';
+import { useStockSubtractionsForShift } from '@/hooks/useStockSubtractions';
 import { createClient } from '@/lib/supabase/client';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
@@ -26,6 +28,18 @@ export default function DrawerStockPage() {
     state.storeLocation
   );
 
+  const { data: additionsData } = useStockAdditionsForShift(
+    state.reportDate,
+    state.shiftType,
+    state.storeLocation
+  );
+
+  const { data: subtractionsData } = useStockSubtractionsForShift(
+    state.reportDate,
+    state.shiftType,
+    state.storeLocation
+  );
+
   // Set current step on mount
   useEffect(() => {
     dispatch({ type: 'SET_STEP', payload: 2 });
@@ -37,6 +51,20 @@ export default function DrawerStockPage() {
       dispatch({ type: 'SET_DRAWER_STOCK_OPENINGS', payload: previousClosing.drawerStockClosing });
     }
   }, [previousClosing, dispatch]);
+
+  // When additions data loads, set drawer added values
+  useEffect(() => {
+    if (additionsData?.drawerAdded) {
+      dispatch({ type: 'SET_DRAWER_STOCK_ADDED', payload: additionsData.drawerAdded });
+    }
+  }, [additionsData, dispatch]);
+
+  // When subtractions data loads, set drawer subtracted values
+  useEffect(() => {
+    if (subtractionsData?.drawerSubtracted) {
+      dispatch({ type: 'SET_DRAWER_STOCK_SUBTRACTED', payload: subtractionsData.drawerSubtracted });
+    }
+  }, [subtractionsData, dispatch]);
 
   const handleSaveDraft = async () => {
     try {

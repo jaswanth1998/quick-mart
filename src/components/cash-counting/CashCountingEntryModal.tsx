@@ -213,21 +213,23 @@ export default function CashCountingEntryModal({
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Bills</h3>
           </div>
-          <div className="p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="p-6 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-4">
             {bills.map((denom) => (
-              <div key={denom.key}>
-                <label className="label">{denom.label}</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="input w-full text-center"
-                  value={formData[denom.key as keyof typeof formData] || ''}
-                  placeholder="0"
-                  onChange={(e) => handleDenominationChange(denom.key, e.target.value)}
-                />
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  ${((formData[denom.key as keyof typeof formData] as number || 0) * denom.faceValue).toFixed(2)}
-                </p>
+              <div key={denom.key} className="flex items-center justify-between sm:block gap-3">
+                <label className="label sm:mb-1 min-w-[40px]">{denom.label}</label>
+                <div className="flex items-center gap-3 sm:block flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    className="input w-full text-center"
+                    value={formData[denom.key as keyof typeof formData] || ''}
+                    placeholder="0"
+                    onChange={(e) => handleDenominationChange(denom.key, e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 sm:mt-1 text-center min-w-[60px]">
+                    ${((formData[denom.key as keyof typeof formData] as number || 0) * denom.faceValue).toFixed(2)}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -238,21 +240,23 @@ export default function CashCountingEntryModal({
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Coins</h3>
           </div>
-          <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="p-6 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4">
             {coins.map((denom) => (
-              <div key={denom.key}>
-                <label className="label">{denom.label}</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="input w-full text-center"
-                  value={formData[denom.key as keyof typeof formData] || ''}
-                  placeholder="0"
-                  onChange={(e) => handleDenominationChange(denom.key, e.target.value)}
-                />
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  ${((formData[denom.key as keyof typeof formData] as number || 0) * denom.faceValue).toFixed(2)}
-                </p>
+              <div key={denom.key} className="flex items-center justify-between sm:block gap-3">
+                <label className="label sm:mb-1 min-w-[40px]">{denom.label}</label>
+                <div className="flex items-center gap-3 sm:block flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    className="input w-full text-center"
+                    value={formData[denom.key as keyof typeof formData] || ''}
+                    placeholder="0"
+                    onChange={(e) => handleDenominationChange(denom.key, e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 sm:mt-1 text-center min-w-[60px]">
+                    ${((formData[denom.key as keyof typeof formData] as number || 0) * denom.faceValue).toFixed(2)}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

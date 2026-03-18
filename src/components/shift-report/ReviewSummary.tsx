@@ -62,6 +62,7 @@ export default function ReviewSummary() {
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Start</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Added</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Subtracted</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sold</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">End</th>
               </tr>
@@ -79,6 +80,7 @@ export default function ReviewSummary() {
                   <td className="px-6 py-3 text-sm font-semibold text-gray-900">{entry.amount_label}</td>
                   <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.start_count}</td>
                   <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.added}</td>
+                  <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.subtracted}</td>
                   <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.sold}</td>
                   <td className="px-4 py-3 text-sm text-center">
                     {entry.has_mismatch ? (
@@ -96,6 +98,7 @@ export default function ReviewSummary() {
             <tfoot>
               <tr className="border-t-2 border-gray-200 bg-gray-50/80">
                 <td className="px-6 py-3 text-sm font-bold text-gray-900">Total</td>
+                <td className="px-4 py-3" />
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3" />
@@ -153,6 +156,7 @@ export default function ReviewSummary() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contents</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Opening</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Addition</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Subtraction</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sold</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Closing</th>
               </tr>
@@ -171,6 +175,7 @@ export default function ReviewSummary() {
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900">{entry.contents}</td>
                   <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.opening}</td>
                   <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.addition}</td>
+                  <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.subtraction}</td>
                   <td className="px-4 py-3 text-sm text-center text-gray-600">{entry.sold}</td>
                   <td className="px-4 py-3 text-sm text-center">
                     {entry.has_mismatch ? (
@@ -188,6 +193,7 @@ export default function ReviewSummary() {
             <tfoot>
               <tr className="border-t-2 border-gray-200 bg-gray-50/80">
                 <td className="px-6 py-3 text-sm font-bold text-gray-900" colSpan={2}>Total</td>
+                <td className="px-4 py-3" />
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3" />
                 <td className="px-4 py-3 text-sm text-center font-bold text-gray-700">{drawerTotalSold}</td>

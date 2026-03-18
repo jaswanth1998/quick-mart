@@ -19,10 +19,6 @@ export default function DrawerStockTable() {
     (sum, entry) => sum + entry.opening,
     0
   );
-  const totalAddition = state.drawerStockEntries.reduce(
-    (sum, entry) => sum + entry.addition,
-    0
-  );
   const totalSold = state.drawerStockEntries.reduce(
     (sum, entry) => sum + entry.sold,
     0
@@ -61,7 +57,6 @@ export default function DrawerStockTable() {
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-20">Drawer #</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contents</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Opening</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Addition</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sold</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Closing</th>
               </tr>
@@ -89,28 +84,6 @@ export default function DrawerStockTable() {
                   {/* Opening - auto-filled, read-only */}
                   <td className="px-4 py-3 text-center bg-gray-50/50">
                     <span className="text-sm text-gray-500 font-medium">{entry.opening}</span>
-                  </td>
-
-                  {/* Addition */}
-                  <td className="px-4 py-2 text-center">
-                    <input
-                      type="number"
-                      min="0"
-                      inputMode="numeric"
-                      className="input text-center w-20 py-2 text-sm font-medium"
-                      value={entry.addition || ''}
-                      placeholder="0"
-                      onChange={(e) =>
-                        dispatch({
-                          type: 'SET_DRAWER_STOCK_ENTRY',
-                          payload: {
-                            index: originalIndex,
-                            field: 'addition',
-                            value: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
-                          },
-                        })
-                      }
-                    />
                   </td>
 
                   {/* Sold */}
@@ -154,7 +127,6 @@ export default function DrawerStockTable() {
               <tr className="border-t-2 border-gray-200 bg-gray-50/80">
                 <td className="px-6 py-3 text-sm font-bold text-gray-900" colSpan={2}>Total</td>
                 <td className="px-4 py-3 text-center text-sm font-bold text-gray-700">{totalOpening}</td>
-                <td className="px-4 py-3 text-center text-sm font-bold text-gray-700">{totalAddition}</td>
                 <td className="px-4 py-3 text-center text-sm font-bold text-gray-700">{totalSold}</td>
                 <td className="px-4 py-3 text-center text-sm font-bold text-gray-900">{totalClosing}</td>
               </tr>

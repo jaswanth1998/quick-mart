@@ -14,6 +14,10 @@ export interface ShiftReport {
   submitted_at: string | null;
   submitted_by: string | null;
   created_by: string;
+  verification_status: 'pending' | 'verified' | 'flagged';
+  verified_by: string | null;
+  verified_at: string | null;
+  verification_notes: string | null;
   total_d_sales: number | null;
   total_d_payout: number | null;
   shift_sales: number | null;
@@ -31,6 +35,7 @@ export interface ValueStockEntry {
   sort_order: number;
   start_count: number;
   added: number;
+  subtracted: number;
   sold: number;
   end_count: number;
   end_count_override: number | null;
@@ -45,6 +50,7 @@ export interface DrawerStockEntry {
   sort_order: number;
   opening: number;
   addition: number;
+  subtraction: number;
   sold: number;
   closing: number;
   closing_override: number | null;
@@ -59,6 +65,7 @@ export interface ShiftReportWithEntries extends ShiftReport {
 export interface ShiftReportsFilter {
   search?: string;
   status?: 'draft' | 'submitted';
+  verificationStatus?: 'pending' | 'verified' | 'flagged';
   shiftType?: ShiftType;
   startDate?: string;
   endDate?: string;
@@ -78,6 +85,7 @@ export const useShiftReports = (filters: ShiftReportsFilter = {}) => {
   const {
     search = '',
     status,
+    verificationStatus,
     shiftType,
     startDate,
     endDate,
@@ -86,31 +94,30 @@ export const useShiftReports = (filters: ShiftReportsFilter = {}) => {
   } = filters;
 
   return useQuery({
-    queryKey: ['shift-reports', { search, status, shiftType, startDate, endDate, page, pageSize }],
+    queryKey: ['shift-reports', { search, status, verificationStatus, shiftType, startDate, endDate, page, pageSize }],
     queryFn: async (): Promise<ShiftReportsResponse> => {
       const supabase = createClient();
 
-      // Build the query
       let query = supabase
         .from('shift_reports')
         .select('*', { count: 'exact' });
 
-      // Apply search filter
       if (search) {
         query = query.or(`shift_incharge.ilike.%${search}%,store_location.ilike.%${search}%`);
       }
 
-      // Apply status filter
       if (status) {
         query = query.eq('status', status);
       }
 
-      // Apply shift type filter
+      if (verificationStatus) {
+        query = query.eq('verification_status', verificationStatus);
+      }
+
       if (shiftType) {
         query = query.eq('shift_type', shiftType);
       }
 
-      // Apply date range filter
       if (startDate) {
         query = query.gte('report_date', startDate);
       }
@@ -118,12 +125,10 @@ export const useShiftReports = (filters: ShiftReportsFilter = {}) => {
         query = query.lte('report_date', endDate);
       }
 
-      // Apply pagination
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
       query = query.range(from, to);
 
-      // Order by report_date descending, then created_at descending
       query = query.order('report_date', { ascending: false }).order('created_at', { ascending: false });
 
       const { data, error, count } = await query;
@@ -152,7 +157,6 @@ export const useShiftReport = (id: number | null | undefined) => {
     queryFn: async (): Promise<ShiftReportWithEntries> => {
       const supabase = createClient();
 
-      // Fetch the shift report
       const { data: report, error: reportError } = await supabase
         .from('shift_reports')
         .select('*')
@@ -163,7 +167,6 @@ export const useShiftReport = (id: number | null | undefined) => {
         throw new Error(reportError.message);
       }
 
-      // Fetch value stock entries
       const { data: valueEntries, error: valueError } = await supabase
         .from('value_stock_entries')
         .select('*')
@@ -174,7 +177,6 @@ export const useShiftReport = (id: number | null | undefined) => {
         throw new Error(valueError.message);
       }
 
-      // Fetch drawer stock entries
       const { data: drawerEntries, error: drawerError } = await supabase
         .from('drawer_stock_entries')
         .select('*')
@@ -260,7 +262,6 @@ export const useSaveValueStockEntries = () => {
       reportId: number;
       entries: Omit<ValueStockEntry, 'id' | 'report_id'>[];
     }) => {
-      // Delete existing entries for this report
       const { error: deleteError } = await supabase
         .from('value_stock_entries')
         .delete()
@@ -270,7 +271,6 @@ export const useSaveValueStockEntries = () => {
         throw new Error(deleteError.message);
       }
 
-      // Insert new entries with report_id
       const entriesWithReportId = entries.map((entry) => ({
         ...entry,
         report_id: reportId,
@@ -305,7 +305,6 @@ export const useSaveDrawerStockEntries = () => {
       reportId: number;
       entries: Omit<DrawerStockEntry, 'id' | 'report_id'>[];
     }) => {
-      // Delete existing entries for this report
       const { error: deleteError } = await supabase
         .from('drawer_stock_entries')
         .delete()
@@ -315,7 +314,6 @@ export const useSaveDrawerStockEntries = () => {
         throw new Error(deleteError.message);
       }
 
-      // Insert new entries with report_id
       const entriesWithReportId = entries.map((entry) => ({
         ...entry,
         report_id: reportId,
@@ -407,8 +405,6 @@ export const usePreviousShiftClosing = (
 
       const prevShift = getPreviousShift(shiftType!);
 
-      // Find the most recent submitted report for the previous shift
-      // First try matching the exact store location
       const { data: storeMatch } = await supabase
         .from('shift_reports')
         .select('*')
@@ -422,7 +418,6 @@ export const usePreviousShiftClosing = (
 
       let prevReport = storeMatch;
 
-      // Fallback: find any previous shift report (handles legacy reports without store_location)
       if (!prevReport) {
         const { data: fallbackMatch } = await supabase
           .from('shift_reports')
@@ -437,7 +432,6 @@ export const usePreviousShiftClosing = (
         prevReport = fallbackMatch;
       }
 
-      // Fallback: most recent submitted report of ANY shift type at same store
       if (!prevReport) {
         const { data: anyShiftMatch } = await supabase
           .from('shift_reports')
@@ -452,7 +446,6 @@ export const usePreviousShiftClosing = (
         prevReport = anyShiftMatch;
       }
 
-      // Last resort: most recent submitted report regardless of shift type or store
       if (!prevReport) {
         const { data: anyMatch } = await supabase
           .from('shift_reports')
@@ -470,7 +463,6 @@ export const usePreviousShiftClosing = (
         return null;
       }
 
-      // Fetch value stock entries for previous report
       const { data: valueEntries, error: valueError } = await supabase
         .from('value_stock_entries')
         .select('*')
@@ -481,7 +473,6 @@ export const usePreviousShiftClosing = (
         throw new Error(valueError.message);
       }
 
-      // Fetch drawer stock entries for previous report
       const { data: drawerEntries, error: drawerError } = await supabase
         .from('drawer_stock_entries')
         .select('*')
@@ -492,7 +483,6 @@ export const usePreviousShiftClosing = (
         throw new Error(drawerError.message);
       }
 
-      // Build closing maps
       const valueStockClosing: Record<string, number> = {};
       if (valueEntries) {
         for (const entry of valueEntries) {
@@ -513,5 +503,45 @@ export const usePreviousShiftClosing = (
       };
     },
     enabled: !!reportDate && !!shiftType && !!storeLocation,
+  });
+};
+
+export const useVerifyShiftReport = () => {
+  const queryClient = useQueryClient();
+  const supabase = createClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      verification_status,
+      verification_notes,
+    }: {
+      id: number;
+      verification_status: 'verified' | 'flagged';
+      verification_notes?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('shift_reports')
+        .update({
+          verification_status,
+          verified_by: user.id,
+          verified_at: new Date().toISOString(),
+          verification_notes: verification_notes || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['shift-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['shift-report', variables.id] });
+    },
   });
 };
