@@ -160,7 +160,7 @@ export default function ReviewPage() {
       <ReviewSummary />
 
       {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3">
         <button
           type="button"
           className="btn-secondary inline-flex items-center gap-2"

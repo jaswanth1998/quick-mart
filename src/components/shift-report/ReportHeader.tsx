@@ -15,9 +15,9 @@ export default function ReportHeader({ onSaveDraft, onSubmit, saving, submitting
   const { state, dispatch } = useShiftReportForm();
 
   return (
-    <div className="card p-6">
+    <div className="card p-4 sm:p-6">
       {/* Title row */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start sm:items-center justify-between gap-2 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Shift Stock Report</h1>
           <p className="text-sm text-gray-500 mt-1">Fill in shift details and stock data</p>
@@ -98,7 +98,7 @@ export default function ReportHeader({ onSaveDraft, onSubmit, saving, submitting
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           className="btn-secondary inline-flex items-center gap-2"
